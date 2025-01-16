@@ -1,0 +1,44 @@
+git --version
+mkdir myproject -- make dir
+cd myproject -- cd to the dir 
+git init -- Once you have navigated to the correct folder, you can initialize Git on that folder
+ls -- get list of file in dir
+
+--- staging ---
+git add filename.format / git add . -- to add all the files
+    git add *.txt -- To add files that match a specific pattern
+    git add path/to/directory/* -- To add files in subdirectories
+    git add file1.txt file2.txt file3.txt -- list the specific files
+    git add -A -- add all modified and new files (but not deleted files)
+
+--- commit ---
+git commit -m "First release of Hello World!"
+Git Commit without Stage
+git status --short
+    (output) M index.html
+    
+Note: Short status flags are:
+
+?? - Untracked files
+A - Files added to stage
+M - Modified files
+D - Deleted files
+
+git commit -a -m "Updated filename with a new line" -- commit changes directly, skipping the staging environment (-a)
+
+To view the history of commits
+git log
+
+git command -help -  See all the available options for the specific command -- (example) git commit -help
+git help --all -  See all possible commands
+
+make branch before merge into master
+git branch hello-world-images -- create branch
+git branch -- to confirm 
+git checkout hello-world-images
+    (output) Switched to branch 'hello-world-images'
+
+how to merge
+First, we need to change to the master branch: 
+git checkout master
+git merge hello-world-images
