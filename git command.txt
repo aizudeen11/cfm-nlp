@@ -1,3 +1,6 @@
+git command -help -  See all the available options for the specific command -- (example) git commit -help
+git help --all -  See all possible commands
+
 git --version
 mkdir myproject -- make dir
 cd myproject -- cd to the dir 
@@ -29,9 +32,6 @@ git commit -a -m "Updated filename with a new line" -- commit changes directly, 
 To view the history of commits
 git log
 
-git command -help -  See all the available options for the specific command -- (example) git commit -help
-git help --all -  See all possible commands
-
 make branch before merge into master
 git branch hello-world-images -- create branch
 git branch -- to confirm 
@@ -42,3 +42,5 @@ how to merge
 First, we need to change to the master branch: 
 git checkout master
 git merge hello-world-images
+
+git branch -d hello-world-images -- delete branch
