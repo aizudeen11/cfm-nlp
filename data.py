@@ -33,3 +33,47 @@ class Data:
         df = df.melt(id_vars="Region", var_name="Date", value_name="Value")
         df2 = sqldf('select * from df where Region not in ("Cambodia", "China", "Hong Kong SAR (China)", "Malaysia", "Vietnam", "Thailand")')
         df3 = sqldf('select * from df where Region in ("Cambodia", "China", "Hong Kong SAR (China)", "Malaysia", "Vietnam", "Thailand")')
+        return df, df2, df3
+    def forex_exchange(self):
+        df1 = pd.read_excel(r"C:\Users\AhmadAizudeen\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Capital Flow Monitor\SEACEN CFM January 2025\edited files\Data\Section 1 Charts.xlsx", sheet_name=3, header=1)
+        df1 = df1.iloc[:,:12]
+        df2 = df1.copy()
+        row = [x for x in range(362)]
+        df2 = df2.drop([0,1,*row], axis=0).reset_index().drop('index', axis=1)
+        df2 = df2.rename(columns={'Region':'Date'})
+        date_new =[x for x in df2.Date if isinstance(x, datetime.datetime)]
+        df2 = df2.iloc[:len(date_new)]
+        df2 = df2.melt(id_vars="Date", var_name="Region", value_name="Value")
+        df2['Year'] = df2['Date'].apply(lambda x : x.date().strftime("%Y"))
+        df2['Date2'] = df2['Date'].apply(lambda x : x.date().strftime("%Y-%m"))
+        latest_year = int(sorted(df2['Year'].unique())[-1])
+        country = df2['Region'].unique()
+        country_year, all_same, year_use = dict(), True, latest_year
+
+        for x in country:    
+            if len(df2[(df2['Region']==x) & (df2['Year']==str(latest_year))]) > 0:
+                country_year.update({x:latest_year})
+            else:
+                all_same = False
+                year_use = df2[(df2['Region']==x)]['Year'].unique()[-1]
+                country_year.update({x:year_use}) 
+
+        country_year.update({'info':{'all_same': all_same, 'year_use': year_use}})      
+        year1 = country_year['info']['year_use']
+        df2 = sqldf(f'select Date2 as Date, Year, Region, Value, row_number() over(partition by Region, Year order by Date2) as row_num from df2 where Year in ("{year1}", "{year1 - 1}")')
+        num_list = sorted(df2[(df2['Region']=='China') & (df2['Year']==str(year1))]['row_num'].unique())
+        num1, num2 =num_list[0] , num_list[-1]
+        df2 = df2[(df2['Region'].isin(country))&(df2['row_num'].isin([num1, num2]))&(df2['Year'].isin([str(year1), str(year1-1)]))]
+        calc_country, year_list = dict(), [str(year1), str(year1 -1)]
+
+        for x in country:
+            for y in year_list:
+                nomi = float(df2[(df2['Region'] == x)&(df2['row_num']==1)&(df2['Year']==str(y))]['Value'].values[0])
+                denomi = float(df2[(df2['Region'] == x)&(df2['row_num']!=1)&(df2['Year']==str(y))]['Value'].values[0])
+                calc = ((nomi/denomi)-1)*100
+                if calc_country.get(x) == None:
+                    calc_country.update({x:{y:calc}})
+                else:
+                    calc_country[x].update({y:calc})
+        df = pd.DataFrame(calc_country).reset_index()
+        return df
