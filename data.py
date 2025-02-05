@@ -76,4 +76,39 @@ class Data:
                 else:
                     calc_country[x].update({y:calc})
         df = pd.DataFrame(calc_country).reset_index()
+        df = df.melt(id_vars="index", var_name="Region", value_name="Value").rename({'index': 'Year'})
         return df
+    def cds(self):
+        df = pd.read_excel(r"C:\Users\AhmadAizudeen\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Capital Flow Monitor\SEACEN CFM January 2025\edited files\Data\Section 1 Charts.xlsx", sheet_name=5, header=1)
+        col =df.columns[:10]
+        df2= df[[*col]]
+        i= [s.find(':') for s in col]
+        col2 = [x[:y] for x, y in zip(col[1:], i[1:])]
+        df2 = df2.rename({k:v for (k,v) in zip(col[1:],col2)}, axis=1).rename({'.DESC' : 'Date'}, axis=1)
+        to_include =[x for x in df2.China if isinstance(x, float)]
+        df2 = df2[df2.China.isin(to_include)].reset_index(drop=True)
+        drop_index =[x for x in df2['Date'].isna()].index(True)
+        df2 = df2.drop(index=[x for x in range(drop_index, len(df2))])
+        df2 = df2.melt(id_vars="Date", var_name="Region", value_name="Value")
+        df2 = df2.fillna('')        
+        return df2
+    def liquidity(self):
+        df = pd.read_excel(r"C:\Users\AhmadAizudeen\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Desktop\NLP Project\download zip\BIS Liquidity data.xlsx")
+        df = df[['TIME_PERIOD','OBS_VALUE']]
+        return df
+    def all_df(self):
+        vix = self.vix_history()
+        policy_rate1,policy_rate2,policy_rate3 = self.policy_rate()
+        monthly_inflation1,monthly_inflation2,monthly_inflation3 = self.monthly_inflation()
+        forex_exchange = self.forex_exchange()
+        cds = self.cds()
+        df_dict = {'vix':vix,
+                   'policy_rate1': policy_rate1,
+                   'policy_rate2': policy_rate2,
+                   'policy_rate3': policy_rate3,
+                   'monthly_inflation1': monthly_inflation1,
+                   'monthly_inflation2': monthly_inflation2,
+                   'monthly_inflation3': monthly_inflation3,
+                   'forex_exchange': forex_exchange,
+                   'cds':cds}
+        return df_dict
