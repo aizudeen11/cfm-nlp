@@ -60,17 +60,21 @@ def server(input, output, session):
         level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
     )
 
-    @reactive.calc
-    def filtered_data():
-        start_date, end_date = input.date_range()
-        start_date = pd.Timestamp(start_date)
-        end_date = pd.Timestamp(end_date)
-        return all_var[0][(all_var[0]["Date"] >= start_date) & (all_var[0]["Date"] <= end_date)]
+    def parent_filtered_df(df):
+        @reactive.calc
+        def filtered_df():        
+            start_date, end_date = input.date_range()
+            start_date = pd.Timestamp(start_date)
+            end_date = pd.Timestamp(end_date)
+            filt_df = df[(df["Date"] >= start_date) & (df["Date"] <= end_date)]
+            return filt_df
+        return filtered_df
+    
+    filltered_vix = parent_filtered_df(all_var[0])
 
     @render_plotly
     def hist():
-        vix = filtered_data()#all_var[0]
-        # vix_df = filtered_data(vix)
+        vix = filltered_vix()
         return px.line(vix, x="Date", y="CLOSE", title="VIX Liquidity")
 
     @render_plotly
