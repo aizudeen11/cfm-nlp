@@ -12,6 +12,7 @@ import plotly.express as px
 from cache_pandas import timed_lru_cache
 import plotly.graph_objects as go
 
+
 @timed_lru_cache(seconds=None, maxsize=None)
 def dataF():
     logging.info("Fetching data in dataF()")
@@ -24,34 +25,78 @@ def dataF():
     logging.info("Completed fetching data in dataF()")
     return vix_data, policy_rate1, policy_rate2, policy_rate3, fx, cds, liquidity
 
+
 all_var = dataF()
 
-app_ui = ui.page_fixed(
+app_ui = ui.page_fluid(
     ui.navset_tab(
         ui.nav_panel(
             "Section 1",
             ui.page_sidebar(
                 ui.sidebar(
-                    ui.input_selectize(
-                        "var",
-                        "Policy Rate",
-                        choices=[
-                            "All region",
-                            "Selected region 1",
-                            "Selected region 2",
-                        ],
+                    ui.card(
+                        ui.input_selectize(
+                            "var",
+                            "Policy Rate",
+                            choices=[
+                                "All region",
+                                "Selected region 1",
+                                "Selected region 2",
+                            ],
+                        ),
+                        ui.input_date_range(
+                            "date_range2",
+                            "Select Date Range - Policy Rate:",
+                            start=all_var[1]["Date"].min(),
+                            end=all_var[1]["Date"].max(),
+                        ),
                     ),
-                    ui.input_date_range("date_range", "Select Date Range:", 
-                        start=all_var[0]["Date"].min(), end=all_var[0]["Date"].max())
+                    ui.card(
+                        ui.input_date_range(
+                            "date_range",
+                            "Select Date Range - Vix:",
+                            start=all_var[0]["Date"].min(),
+                            end=all_var[0]["Date"].max(),
+                        ),
+                    ),
+                    ui.card(
+                        ui.input_date_range(
+                            "date_range3",
+                            "Select Date Range - CDS:",
+                            start=all_var[5]["Date"].min(),
+                            end=all_var[5]["Date"].max(),
+                        ),
+                    ),
+                    title="Filter controls",
                 ),
-                output_widget("hist"),
-                output_widget("hist1"),
-                output_widget("hist2"),
-                output_widget("hist3"),
-                output_widget("hist4"),
+                ui.layout_columns(
+                    ui.card(
+                        output_widget("hist"),
+                        full_screen=True,
+                    ),
+                    ui.card(
+                        output_widget("hist1"),
+                        full_screen=True,
+                    ),
+                    ui.card(
+                        output_widget("hist2"),
+                        full_screen=True,
+                    ),
+                    ui.card(
+                        output_widget("hist3"),
+                        full_screen=True,
+                    ),
+                    ui.card(
+                        output_widget("hist4"),
+                        full_screen=True,
+                    ),
+                    fill=False,
+                    col_widths={"sm": (6, 6)},
+                ),
             ),
         )
-    )
+    ),
+    title="Capital Flow Monitor Dashboard",
 )
 
 
@@ -60,17 +105,30 @@ def server(input, output, session):
         level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
     )
 
-    def parent_filtered_df(df):
-        @reactive.calc
-        def filtered_df():        
-            start_date, end_date = input.date_range()
-            start_date = pd.Timestamp(start_date)
-            end_date = pd.Timestamp(end_date)
-            filt_df = df[(df["Date"] >= start_date) & (df["Date"] <= end_date)]
-            return filt_df
-        return filtered_df
-    
-    filltered_vix = parent_filtered_df(all_var[0])
+    def parent_filtered_df(df, input_date_range):
+        start_date, end_date = input_date_range
+        start_date = pd.Timestamp(start_date)
+        end_date = pd.Timestamp(end_date)
+
+        filt_df = df[(df["Date"] >= start_date) & (df["Date"] <= end_date)]
+
+        return filt_df
+
+    filltered_vix = reactive.Calc(
+        lambda: parent_filtered_df(all_var[0], input.date_range())
+    )
+    filltered_pr1 = reactive.Calc(
+        lambda: parent_filtered_df(all_var[1], input.date_range2())
+    )
+    filltered_pr2 = reactive.Calc(
+        lambda: parent_filtered_df(all_var[2], input.date_range2())
+    )
+    filltered_pr3 = reactive.Calc(
+        lambda: parent_filtered_df(all_var[3], input.date_range2())
+    )
+    filltered_cds = reactive.Calc(
+        lambda: parent_filtered_df(all_var[5], input.date_range3())
+    )
 
     @render_plotly
     def hist():
@@ -79,13 +137,12 @@ def server(input, output, session):
 
     @render_plotly
     def hist1():
-        policy_rate1, policy_rate2, policy_rate3 = all_var[1],all_var[2],all_var[3]
         policy_dict = {
-            "All region": policy_rate1,
-            "Selected region 1": policy_rate2,
-            "Selected region 2": policy_rate3,
+            "All region": filltered_pr1(),
+            "Selected region 1": filltered_pr2(),
+            "Selected region 2": filltered_pr3(),
         }
-        policy_rate = policy_dict.get(input.var(), policy_rate1)
+        policy_rate = policy_dict.get(input.var(), filltered_pr1())
         return px.line(
             policy_rate,
             x="Date",
@@ -102,17 +159,16 @@ def server(input, output, session):
             fx,
             x="Value",
             y="Region",
-            color="index",
+            color="Year",
             barmode="group",
             # orientation="h",
-            height=400,
             title="Forex Exchange",
         )
         return fig
 
     @render_plotly
     def hist3():
-        cds = all_var[5]
+        cds = filltered_cds()
         return px.line(
             cds, x="Date", y="Value", color="Region", markers=True, title="CDS"
         )
@@ -126,7 +182,6 @@ def server(input, output, session):
             y="OBS_VALUE",
             # color='index', barmode='group',
             # orientation="h",
-            height=400,
             title="Liquidity",
         )
         return fig

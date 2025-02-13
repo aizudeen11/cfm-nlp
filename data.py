@@ -4,6 +4,7 @@ import datetime
 
 # use min max()
 
+
 class Data:
     def __init__(self):
         pass
@@ -14,9 +15,9 @@ class Data:
             sheet_name=1,
         )
         df["Date"] = df["Month"].astype(str) + "-" + df["Year"].astype(str)
-        df["Date"] = pd.to_datetime(df["Date"])#.dt.to_period('M') 
+        df["Date"] = pd.to_datetime(df["Date"]) + pd.offsets.MonthEnd(0)
         df = df.rename(columns={"avg(CLOSE)": "CLOSE"})
-        df = df[["Date", "CLOSE"]]#.iloc#[::-1]#[360:]
+        df = df[["Date", "CLOSE"]]  # .iloc#[::-1]#[360:]
         return df
 
     def policy_rate(self):
@@ -29,14 +30,17 @@ class Data:
         date = df.columns[1:]
         date2 = [x.date().strftime("%Y-%m") for x in date]
         df = df.rename(columns={k: v for (k, v) in zip(date, date2)})
-        df = df.drop(date2[:84], axis=1)
+        # df = df.drop(date2[:84], axis=1)
         df = df.melt(id_vars="Region", var_name="Date", value_name="Value")
+        df["Date"] = pd.to_datetime(df["Date"]) + pd.offsets.MonthEnd(0)
         df2 = sqldf(
             'select * from df where Region in ("United States", "Euro Area", "Mongolia", "Nepal", "Philippines", "Korea", "Sri Lanka", "Thailand", "China")'
         )
+        df2["Date"] = pd.to_datetime(df2["Date"]) + pd.offsets.MonthEnd(0)
         df3 = sqldf(
             'select * from df where Region in ("Indonesia", "India", "Malaysia", "Chinese Taipei", "Vietnam")'
         )
+        df3["Date"] = pd.to_datetime(df3["Date"]) + pd.offsets.MonthEnd(0)
         return df, df2, df3
 
     def monthly_inflation(self):
@@ -68,12 +72,13 @@ class Data:
         )
         df1 = df1.iloc[:, :12]
         df2 = df1.copy()
-        row = [x for x in range(362)]
-        df2 = df2.drop([0, 1, *row], axis=0).reset_index().drop("index", axis=1)
+        # row = [x for x in range(362)]
+        df2 = df2.drop([0, 1], axis=0).reset_index(drop=True)
         df2 = df2.rename(columns={"Region": "Date"})
         date_new = [x for x in df2.Date if isinstance(x, datetime.datetime)]
         df2 = df2.iloc[: len(date_new)]
         df2 = df2.melt(id_vars="Date", var_name="Region", value_name="Value")
+        df2["Date"] = pd.to_datetime(df2["Date"]) + pd.offsets.MonthEnd(0)
         df2["Year"] = df2["Date"].apply(lambda x: x.date().strftime("%Y"))
         df2["Date2"] = df2["Date"].apply(lambda x: x.date().strftime("%Y-%m"))
         latest_year = int(sorted(df2["Year"].unique())[-1])
@@ -129,8 +134,17 @@ class Data:
                     calc_country[x].update({y: calc})
         df = pd.DataFrame(calc_country).reset_index()
         df = df.melt(id_vars="index", var_name="Region", value_name="Value").rename(
-            {"index": "Year"}
+            {"index": "Year"}, axis=1
         )
+        region_sort = list(
+            df[(df["Year"] == "2024")].sort_values(by="Value", ascending=False)[
+                "Region"
+            ]
+        )
+        df["Region"] = pd.Categorical(
+            df["Region"], categories=region_sort, ordered=True
+        )
+        df = df.sort_values(by="Region", ascending=False)
         return df
 
     def cds(self):
@@ -151,6 +165,7 @@ class Data:
         drop_index = [x for x in df2["Date"].isna()].index(True)
         df2 = df2.drop(index=[x for x in range(drop_index, len(df2))])
         df2 = df2.melt(id_vars="Date", var_name="Region", value_name="Value")
+        df2["Date"] = pd.to_datetime(df2["Date"]) + pd.offsets.MonthEnd(0)
         df2 = df2.fillna("")
         return df2
 

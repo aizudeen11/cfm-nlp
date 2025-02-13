@@ -1,61 +1,58 @@
-from shiny import App, ui, render, reactive
-from data import Data
-import logging
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.wait import WebDriverWait
 import pandas as pd
+from bs4 import BeautifulSoup
+# from lxml import etree 
 
-# import shinyswatch
-from shinywidgets import render_plotly, output_widget
-import plotly.express as px
-from cache_pandas import timed_lru_cache
-import plotly.graph_objects as go
+data_f = None
+# State the Webdriver options
+options = webdriver.ChromeOptions()
 
-# Example data frames
-all_var = [
-    pd.DataFrame({
-        "Date": pd.date_range(start="2023-01-01", periods=100),
-        "CLOSE": range(100)
-    }),
-    pd.DataFrame({
-        "Date": pd.date_range(start="2023-01-01", periods=100),
-        "CLOSE": range(100, 200)
-    })
-]
+# Add argument to make it headless
+# options.add_argument('--headless')
 
-def server(input, output, session):
-    logging.basicConfig(
-        level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
-    )
+# Define the chrome driver path
+ser=Service(r"C:\Users\AhmadAizudeen\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Desktop\NLP Project\cfm-nlp\chromedriver_win32\chromedriver.exe")
 
-    # Factory function to create a reactive calculation for a given data frame
-    def create_filtered_df(df):
-        @reactive.calc
-        def filtered_df():
-            start_date, end_date = input.date_range()
-            start_date = pd.Timestamp(start_date)
-            end_date = pd.Timestamp(end_date)
-            filt_df = df[(df["Date"] >= start_date) & (df["Date"] <= end_date)]
-            return filt_df
-        return filtered_df
+# Initiate the Chromedriver by passing options as argument
+driver = webdriver.Chrome(service=ser,options=options)
 
-    # Create reactive calculations for each data frame
-    filtered_df_1 = create_filtered_df(all_var[0])
-    filtered_df_2 = create_filtered_df(all_var[1])
+# Obtain the web page
+# driver.get('https://www.federalreserve.gov/newsevents/pressreleases.htm')
 
-    @render_plotly
-    def hist_1():
-        vix = filtered_df_1()
-        return px.line(vix, x="Date", y="CLOSE", title="VIX Liquidity (Data Frame 1)")
+driver.get(r'https://www.imf.org/en/Publications/SPROLLs/world-economic-outlook-databases#sort=%40imfdate%20descending')
 
-    @render_plotly
-    def hist_2():
-        vix = filtered_df_2()
-        return px.line(vix, x="Date", y="CLOSE", title="VIX Liquidity (Data Frame 2)")
+element = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CLASS_NAME, "coveo-results-column")))
 
-# Example UI
-ui = ui.page_fluid(
-    ui.input_date_range("date_range", "Date Range", start="2023-01-01", end="2023-03-31"),
-    output_widget("hist_1"),
-    output_widget("hist_2")
-)
 
-app = App(ui, server)
+source = BeautifulSoup(driver.page_source, 'html.parser')
+source
+
+#     dom = etree.HTML(str(source)) 
+
+#     # int(time[0][4:])
+
+#     date = [dom.xpath(f'//*[@id="article"]/div[1]/div[{x}]/div[1]/time')[0].text for x in range(1,21)]
+#     date2 = [date[x][4:] for x in range(len(date))]
+#     date_lim = '2023' if 2023 in date2 else '2024'
+#     date_len = len(date)
+#     title = [dom.xpath(f'//*[@id="article"]/div[1]/div[{x}]/div[2]/p[1]/span/a/text()')[0] for x in range(1, date_len + 1)]
+#     link = ['https://www.federalreserve.gov'+dom.xpath(f'//*[@id="article"]/div[1]/div[{x}]/div[2]/p[1]/span/a/@href')[0] for x in range(1, date_len + 1)]
+#     type_ = [dom.xpath(f'//*[@id="article"]/div[1]/div[{x}]/div[2]/p[2]/b/em')[0].text for x in range(1, date_len + 1)]
+
+#     if data_f is None:
+#         data_f = {'date': date, 'title' : title, 'link': link, 'type' : type_}
+#         data_f = pd.DataFrame(data_f)
+#     else:
+#         data_f2 = {'date': date, 'title' : title, 'link': link, 'type' : type_}
+#         data_f2 = pd.DataFrame(data_f2)
+#         data_f = pd.concat([data_f, data_f2], ignore_index=True)
+
+#     click_pag = driver.find_element(By.XPATH, f'//*[@id="article"]/ul[1]/li[11]/a')
+#     click_pag.click()
+
+    # Print the title of the web page
+print(driver.title)
