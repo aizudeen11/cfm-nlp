@@ -35,6 +35,35 @@ app_ui = ui.page_fluid(
             ui.page_sidebar(
                 ui.sidebar(
                     ui.card(
+                        ui.p("This is a sidebar"),                        
+                    ),
+                    title="Filter controls",
+                ),
+                ui.layout_columns(
+                    ui.card(
+                        ui.card_header("VIX Liquidity"),
+                        ui.layout_columns(
+                            ui.input_date_range(
+                            "date_range",
+                            "Select Date Range - Vix:",
+                            start=all_var[0]["Date"].min(),
+                            end=all_var[0]["Date"].max()
+                            ),
+                        output_widget("hist"),                      
+                        col_widths={"sm": (12, 12)},
+                        row_heights=['auto', 1], 
+                        ),
+                        full_screen=True,
+                    ),
+                    ui.card(
+                        ui.card_header("Policy Rate"),
+                        ui.layout_columns(
+                            ui.input_date_range(
+                            "date_range2",
+                            "Select Date Range - Policy Rate:",
+                            start=all_var[1]["Date"].min(),
+                            end=all_var[1]["Date"].max()
+                            ),   
                         ui.input_selectize(
                             "var",
                             "Policy Rate",
@@ -44,46 +73,40 @@ app_ui = ui.page_fluid(
                                 "Selected region 2",
                             ],
                         ),
-                        ui.input_date_range(
-                            "date_range2",
-                            "Select Date Range - Policy Rate:",
-                            start=all_var[1]["Date"].min(),
-                            end=all_var[1]["Date"].max(),
-                        ),
+                        output_widget("hist1"),
+                        ui.card_footer("""Notes: The policy rate for the United States refers to the effective Fed Funds rate. Data for China pertains to the one-year 
+                                       loan prime rate sourced from the Bank for International Settlements (BIS) Data Portal. The policy rate for the Euro Area is the 
+                                       main refinancing fixed rate of the European Central Bank
+                                       """),
+                        col_widths={"sm": (6, 6, 12, 12)},
+                        row_heights=['auto', 1],                     
+                        ),                        
+                        # output_widget("hist1"),
+                        full_screen=True,
                     ),
                     ui.card(
-                        ui.input_date_range(
-                            "date_range",
-                            "Select Date Range - Vix:",
-                            start=all_var[0]["Date"].min(),
-                            end=all_var[0]["Date"].max(),
-                        ),
+                        ui.card_header("Exchange Rate Changes"),
+                        output_widget("hist2"),
+                        ui.card_footer("""Notes: Year-to-date values are computed as the monthly difference between the first and last data points within a year. 
+                                       Positive changes refer to an appreciation of the local currency versus the U.S. dollar, and negative changes refer to depreciation. 
+                                       """),
+                        full_screen=True,
                     ),
                     ui.card(
-                        ui.input_date_range(
+                        ui.card_header("5-Year Sovereign Credit Default Swap"),
+                        ui.layout_columns(
+                            ui.input_date_range(
                             "date_range3",
                             "Select Date Range - CDS:",
                             start=all_var[5]["Date"].min(),
                             end=all_var[5]["Date"].max(),
                         ),
-                    ),
-                    title="Filter controls",
-                ),
-                ui.layout_columns(
-                    ui.card(
-                        output_widget("hist"),
-                        full_screen=True,
-                    ),
-                    ui.card(
-                        output_widget("hist1"),
-                        full_screen=True,
-                    ),
-                    ui.card(
-                        output_widget("hist2"),
-                        full_screen=True,
-                    ),
-                    ui.card(
-                        output_widget("hist3"),
+                            output_widget("hist3"),
+                            ui.card_footer("""
+                                           Note: 5-Year USD Credit Default Swap par mid-rate in basis points.
+                                       """),
+                            col_widths={"sm": (12, 12)},
+                            row_heights=['auto', 1],),
                         full_screen=True,
                     ),
                     ui.card(
@@ -142,6 +165,12 @@ def server(input, output, session):
             "Selected region 1": filltered_pr2(),
             "Selected region 2": filltered_pr3(),
         }
+        title_pl = {
+            "All region": "Policy Rate - All Region",
+            "Selected region 1": "Policy Rate - Selected Region 1",
+            "Selected region 2": "Policy Rate - Selected Region 2",
+            }
+        title_pl2 = title_pl.get(input.var(), "Policy Rate")
         policy_rate = policy_dict.get(input.var(), filltered_pr1())
         return px.line(
             policy_rate,
@@ -149,7 +178,7 @@ def server(input, output, session):
             y="Value",
             color="Region",
             markers=True,
-            title="Policy Rate",
+            title=title_pl2,
         )
 
     @render_plotly
