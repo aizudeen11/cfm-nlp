@@ -9,6 +9,149 @@ class Data:
     def __init__(self):
         pass
 
+    def gdp_growth(self):
+        def convert_date_to_quarter(date_str, dtq=True):
+            if not dtq:
+                year = date_str[:4]
+                quarter = date_str[5:7]
+                qd_dict = {"03": "1Q", "06": "2Q", "09": "3Q", "12": "4Q"}
+            else:
+                year = date_str[-4:]
+                quarter = date_str[0]
+                qd_dict = {"1": "31/3/", "2": "30/6/", "3": "30/9/", "4": "31/12/"}
+            if quarter in qd_dict.keys():
+                return f"{qd_dict.get(quarter)}{year}"
+            else:
+                return date_str
+
+        def fd_calc(fd: pd.DataFrame, cal=True) -> pd.DataFrame:
+            sum_row = fd.sum()
+            fd.loc["Total"] = sum_row
+            if cal:
+                fd = fd.apply(lambda x: x / fd.loc["Total"], axis=1)
+            return fd
+
+        df = pd.read_excel(
+            r"C:\Users\AhmadAizudeen\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Capital Flow Monitor\SEACEN CFM January 2025\edited files\Data\Growth and Inflation 3Q2024.xlsx",
+            sheet_name=1,
+            header=1,
+        )
+
+        fd = pd.read_excel(
+            r"C:\Users\AhmadAizudeen\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Capital Flow Monitor\SEACEN CFM January 2025\edited files\Data\Growth and Inflation 3Q2024.xlsx",
+            sheet_name=2,
+            nrows=12,
+        )
+
+        col_name = list(map(convert_date_to_quarter, fd.columns))
+        fd.rename({fd.columns[0]: "Region"}, axis=1, inplace=True)
+        fd.set_index("Region", inplace=True)
+        fd.loc["Total"] = fd.sum()
+        df2 = df.copy()
+        df2 = df2.drop([0, 1], axis=0)
+        ch_df = pd.read_excel(
+            r"C:\Users\AhmadAizudeen\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Capital Flow Monitor\SEACEN CFM January 2025\edited files\Data\Growth and Inflation 3Q2024.xlsx",
+            sheet_name=0,
+            header=1,
+        )
+        ch_df = (
+            ch_df.drop([0, 1])[["Region", "China"]]
+            .set_index("Region")
+            .rename(columns={"Region": "Date"})
+        )
+        df2 = df2[df2.columns[:13]].rename(columns={"Region": "Date"}).set_index("Date")
+        df2["China"] = ch_df["China"]
+        df3 = df2[
+            [
+                "China",
+                "India",
+                "Malaysia",
+                "Mongolia",
+                "Philippines",
+                "Taiwan",
+                "Thailand",
+            ]
+        ].apply(lambda x: ((x / x.shift(4)) - 1) * 100)
+        df3 = pd.concat(
+            [
+                df2[
+                    [
+                        "Hong Kong SAR (China)",
+                        "Indonesia",
+                        "South Korea",
+                        "Singapore",
+                        "Vietnam",
+                    ]
+                ],
+                df3,
+            ],
+            axis=1,
+        )
+        df3.reset_index(inplace=True)
+        df3["Date"] = pd.to_datetime(df3["Date"]) + pd.offsets.MonthEnd(0)
+        select_row = len(fd.columns)
+        df4 = df3[-select_row:]
+
+        df4["Date"] = list(
+            df4["Date"].apply(lambda x: convert_date_to_quarter(str(x), False))
+        )
+        df4 = (
+            df4.set_index("Date")
+            .transpose()
+            .reset_index()
+            .rename(columns={"index": "Region"})
+        )  # this is bullshit
+        df4.set_index("Region", inplace=True)
+        df4.rename(
+            index={
+                "Hong Kong SAR (China)": "Hong Kong",
+                "South Korea": "Korea",
+                "Taiwan": "Taipei",
+            },
+            inplace=True,
+        )
+        df4 = df4.reindex(fd.index[:12])
+
+        asean5 = fd_calc(
+            fd.loc[["Indonesia", "Malaysia", "Philippines", "Thailand", "Vietnam"]]
+        ) * fd_calc(
+            df4.loc[["Indonesia", "Malaysia", "Philippines", "Thailand", "Vietnam"]],
+            cal=False,
+        )
+        asean5.drop("Total", inplace=True)
+        asean5_sum = asean5.sum()
+        asean5.loc["ASEAN-5"] = asean5_sum
+
+        adv_asia = fd_calc(
+            fd.loc[["Hong Kong", "Korea", "Singapore", "Taipei"]]
+        ) * fd_calc(df4.loc[["Hong Kong", "Korea", "Singapore", "Taipei"]], cal=False)
+        adv_asia.drop("Total", inplace=True)
+        adv_asia_sum = adv_asia.sum()
+        adv_asia.loc["Asia Advanced Economies"] = adv_asia_sum
+
+        asia = fd.apply(lambda x: x / fd.loc["Total"], axis=1) * df4
+        asia_sum = asia.sum()
+        asia.loc["Asia"] = asia_sum
+
+        gdp_growth = (
+            pd.concat(
+                [
+                    asia.loc["Asia"],
+                    df4.loc["China"],
+                    df4.loc["India"],
+                    asean5.loc["ASEAN-5"],
+                    adv_asia.loc["Asia Advanced Economies"],
+                ],
+                axis=1,
+            )
+            .reset_index()
+            .rename(columns={"index": "Quarter"})
+        )
+        gdp_growth = gdp_growth.melt(
+            id_vars="Quarter", var_name="Region", value_name="Value"
+        )
+        return gdp_growth
+
     def vix_history(self):
         df = pd.read_excel(
             r"C:\Users\AhmadAizudeen\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Desktop\NLP Project\download zip\VIX_History.xlsx",

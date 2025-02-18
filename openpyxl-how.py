@@ -15,7 +15,7 @@ for drawing in ws._charts:
 
     # Update the chart's data range (Assuming it's based on column A and B)
     new_data_range = f"Sheet1!$A$2:$A${last_row},Sheet1!$B$2:$B${last_row}"
-    
+
     # Update the chart series with the new range
     chart.series[0].values = new_data_range  # Assuming it's the first series
 

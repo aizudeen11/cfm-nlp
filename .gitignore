@@ -1,5 +1,6 @@
 __pycache__
 .env
-openpyxl.py
+openpyxl-how.py
 /dashboard
 /chromedriver_win32
+test_shiny.py

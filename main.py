@@ -22,8 +22,18 @@ def dataF():
     fx = df.forex_exchange()
     cds = df.cds()
     liquidity = df.liquidity()
+    gdp_growth = df.gdp_growth()
     logging.info("Completed fetching data in dataF()")
-    return vix_data, policy_rate1, policy_rate2, policy_rate3, fx, cds, liquidity
+    return (
+        vix_data,
+        policy_rate1,
+        policy_rate2,
+        policy_rate3,
+        fx,
+        cds,
+        liquidity,
+        gdp_growth,
+    )
 
 
 all_var = dataF()
@@ -35,7 +45,7 @@ app_ui = ui.page_fluid(
             ui.page_sidebar(
                 ui.sidebar(
                     ui.card(
-                        ui.p("This is a sidebar"),                        
+                        ui.p("This is a sidebar"),
                     ),
                     title="Filter controls",
                 ),
@@ -44,14 +54,14 @@ app_ui = ui.page_fluid(
                         ui.card_header("VIX Liquidity"),
                         ui.layout_columns(
                             ui.input_date_range(
-                            "date_range",
-                            "Select Date Range - Vix:",
-                            start=all_var[0]["Date"].min(),
-                            end=all_var[0]["Date"].max()
+                                "date_range",
+                                "Select Date Range - Vix:",
+                                start=all_var[0]["Date"].min(),
+                                end=all_var[0]["Date"].max(),
                             ),
-                        output_widget("hist"),                      
-                        col_widths={"sm": (12, 12)},
-                        row_heights=['auto', 1], 
+                            output_widget("hist"),
+                            col_widths={"sm": (12, 12)},
+                            row_heights=["auto", 1],
                         ),
                         full_screen=True,
                     ),
@@ -59,54 +69,85 @@ app_ui = ui.page_fluid(
                         ui.card_header("Policy Rate"),
                         ui.layout_columns(
                             ui.input_date_range(
-                            "date_range2",
-                            "Select Date Range - Policy Rate:",
-                            start=all_var[1]["Date"].min(),
-                            end=all_var[1]["Date"].max()
-                            ),   
-                        ui.input_selectize(
-                            "var",
-                            "Policy Rate",
-                            choices=[
-                                "All region",
-                                "Selected region 1",
-                                "Selected region 2",
-                            ],
-                        ),
-                        output_widget("hist1"),
-                        ui.card_footer("""Notes: The policy rate for the United States refers to the effective Fed Funds rate. Data for China pertains to the one-year 
+                                "date_range2",
+                                "Select Date Range - Policy Rate:",
+                                start=all_var[1]["Date"].min(),
+                                end=all_var[1]["Date"].max(),
+                            ),
+                            ui.input_selectize(
+                                "var",
+                                "Policy Rate",
+                                choices=[
+                                    "All region",
+                                    "Selected region 1",
+                                    "Selected region 2",
+                                ],
+                            ),
+                            output_widget("hist1"),
+                            ui.card_footer(
+                                """Notes: The policy rate for the United States refers to the effective Fed Funds rate. Data for China pertains to the one-year 
                                        loan prime rate sourced from the Bank for International Settlements (BIS) Data Portal. The policy rate for the Euro Area is the 
                                        main refinancing fixed rate of the European Central Bank
-                                       """),
-                        col_widths={"sm": (6, 6, 12, 12)},
-                        row_heights=['auto', 1],                     
-                        ),                        
+                                       """
+                            ),
+                            col_widths={"sm": (6, 6, 12, 12)},
+                            row_heights=["auto", 1],
+                        ),
                         # output_widget("hist1"),
                         full_screen=True,
                     ),
                     ui.card(
                         ui.card_header("Exchange Rate Changes"),
                         output_widget("hist2"),
-                        ui.card_footer("""Notes: Year-to-date values are computed as the monthly difference between the first and last data points within a year. 
+                        ui.card_footer(
+                            """Notes: Year-to-date values are computed as the monthly difference between the first and last data points within a year. 
                                        Positive changes refer to an appreciation of the local currency versus the U.S. dollar, and negative changes refer to depreciation. 
-                                       """),
+                                       """
+                        ),
                         full_screen=True,
                     ),
                     ui.card(
                         ui.card_header("5-Year Sovereign Credit Default Swap"),
                         ui.layout_columns(
                             ui.input_date_range(
-                            "date_range3",
-                            "Select Date Range - CDS:",
-                            start=all_var[5]["Date"].min(),
-                            end=all_var[5]["Date"].max(),
-                        ),
+                                "date_range3",
+                                "Select Date Range - CDS:",
+                                start=all_var[5]["Date"].min(),
+                                end=all_var[5]["Date"].max(),
+                            ),
                             output_widget("hist3"),
-                            ui.card_footer("""
+                            ui.card_footer(
+                                """
                                            Note: 5-Year USD Credit Default Swap par mid-rate in basis points.
-                                       """),
+                                       """
+                            ),
                             col_widths={"sm": (12, 12)},
-                            row_heights=['auto', 1],),
+                            row_heights=["auto", 1],
+                        ),
+                        full_screen=True,
+                    ),
+                    ui.card(
+                        ui.card_header("GDP Growth"),
+                        ui.layout_columns(
+                            ui.input_checkbox_group(
+                                "gdp_quarterly",
+                                "GDP Quarterly",  # {x:x for x in all_var[7]['Quarter'].unique()}, selected=all_var[7]['Quarter'].unique(),
+                                choices=list(
+                                    all_var[7]["Quarter"].unique()
+                                ),  # Ensure it's a list, not a dict
+                                selected=list(all_var[7]["Quarter"].unique()),
+                                inline=True,
+                            ),
+                            output_widget("hist5"),
+                            col_widths={"sm": (12, 12)},
+                            row_heights=["auto", 1],
+                        ),
+                        ui.card_footer(
+                            """
+                                       Notes: Regional growth rates are weighted averages of individual growth rates, using GDP in PPP as weights. Asia Economies include 
+                                       China, India, Mongolia, ASEAN-5 (Indonesia, Malaysia, Philippines, Thailand, and Vietnam), and Asia Advanced Economies (Hong Kong, 
+                                       China; Korea; Singapore; and Chinese Taipei)."""
+                        ),
                         full_screen=True,
                     ),
                     ui.card(
@@ -169,7 +210,7 @@ def server(input, output, session):
             "All region": "Policy Rate - All Region",
             "Selected region 1": "Policy Rate - Selected Region 1",
             "Selected region 2": "Policy Rate - Selected Region 2",
-            }
+        }
         title_pl2 = title_pl.get(input.var(), "Policy Rate")
         policy_rate = policy_dict.get(input.var(), filltered_pr1())
         return px.line(
@@ -212,6 +253,21 @@ def server(input, output, session):
             # color='index', barmode='group',
             # orientation="h",
             title="Liquidity",
+        )
+        return fig
+
+    @render_plotly
+    def hist5():
+        gdp_growth = all_var[7]
+        gdp_growth = gdp_growth[gdp_growth["Quarter"].isin(input.gdp_quarterly())]
+        fig = px.histogram(
+            gdp_growth,
+            x="Quarter",
+            y="Value",
+            color="Region",
+            barmode="group",
+            # orientation="h",
+            title="GDP Growth by Region",
         )
         return fig
 

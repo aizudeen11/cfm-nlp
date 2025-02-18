@@ -5,7 +5,8 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
 import pandas as pd
 from bs4 import BeautifulSoup
-# from lxml import etree 
+
+# from lxml import etree
 
 data_f = None
 # State the Webdriver options
@@ -15,23 +16,29 @@ options = webdriver.ChromeOptions()
 # options.add_argument('--headless')
 
 # Define the chrome driver path
-ser=Service(r"C:\Users\AhmadAizudeen\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Desktop\NLP Project\cfm-nlp\chromedriver_win32\chromedriver.exe")
+ser = Service(
+    r"C:\Users\AhmadAizudeen\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Desktop\NLP Project\cfm-nlp\chromedriver_win32\chromedriver.exe"
+)
 
 # Initiate the Chromedriver by passing options as argument
-driver = webdriver.Chrome(service=ser,options=options)
+driver = webdriver.Chrome(service=ser, options=options)
 
 # Obtain the web page
 # driver.get('https://www.federalreserve.gov/newsevents/pressreleases.htm')
 
-driver.get(r'https://www.imf.org/en/Publications/SPROLLs/world-economic-outlook-databases#sort=%40imfdate%20descending')
+driver.get(
+    r"https://www.imf.org/en/Publications/SPROLLs/world-economic-outlook-databases#sort=%40imfdate%20descending"
+)
 
-element = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CLASS_NAME, "coveo-results-column")))
+element = WebDriverWait(driver, 10).until(
+    EC.presence_of_element_located((By.CLASS_NAME, "coveo-results-column"))
+)
 
 
-source = BeautifulSoup(driver.page_source, 'html.parser')
+source = BeautifulSoup(driver.page_source, "html.parser")
 source
 
-#     dom = etree.HTML(str(source)) 
+#     dom = etree.HTML(str(source))
 
 #     # int(time[0][4:])
 
@@ -54,5 +61,5 @@ source
 #     click_pag = driver.find_element(By.XPATH, f'//*[@id="article"]/ul[1]/li[11]/a')
 #     click_pag.click()
 
-    # Print the title of the web page
+# Print the title of the web page
 print(driver.title)
