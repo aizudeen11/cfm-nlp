@@ -215,7 +215,6 @@ class Data:
         )
         df1 = df1.iloc[:, :12]
         df2 = df1.copy()
-        # row = [x for x in range(362)]
         df2 = df2.drop([0, 1], axis=0).reset_index(drop=True)
         df2 = df2.rename(columns={"Region": "Date"})
         date_new = [x for x in df2.Date if isinstance(x, datetime.datetime)]
@@ -224,53 +223,39 @@ class Data:
         df2["Date"] = pd.to_datetime(df2["Date"]) + pd.offsets.MonthEnd(0)
         df2["Year"] = df2["Date"].apply(lambda x: x.date().strftime("%Y"))
         df2["Date2"] = df2["Date"].apply(lambda x: x.date().strftime("%Y-%m"))
+        year_now = datetime.date.today().year
+        year2 = [str(x) for x in range(2020, year_now+1)]
         latest_year = int(sorted(df2["Year"].unique())[-1])
         country = df2["Region"].unique()
-        country_year, all_same, year_use = dict(), True, latest_year
 
-        for x in country:
-            if len(df2[(df2["Region"] == x) & (df2["Year"] == str(latest_year))]) > 0:
-                country_year.update({x: latest_year})
-            else:
-                all_same = False
-                year_use = df2[(df2["Region"] == x)]["Year"].unique()[-1]
-                country_year.update({x: year_use})
-
-        country_year.update({"info": {"all_same": all_same, "year_use": year_use}})
-        year1 = country_year["info"]["year_use"]
         df2 = sqldf(
-            f'select Date2 as Date, Year, Region, Value, row_number() over(partition by Region, Year order by Date2) as row_num from df2 where Year in ("{year1}", "{year1 - 1}")'
+            f'select Date2 as Date, Year, Region, Value, row_number() over(partition by Region, Year order by Date2) as row_num from df2 where Year in ("{'", "'.join(year2)}")'
         )
-        num_list = sorted(
-            df2[(df2["Region"] == "China") & (df2["Year"] == str(year1))][
-                "row_num"
-            ].unique()
-        )
-        num1, num2 = num_list[0], num_list[-1]
-        df2 = df2[
-            (df2["Region"].isin(country))
-            & (df2["row_num"].isin([num1, num2]))
-            & (df2["Year"].isin([str(year1), str(year1 - 1)]))
-        ]
-        calc_country, year_list = dict(), [str(year1), str(year1 - 1)]
+
+        df2 = df2.groupby("Year").apply(lambda x: x[x["row_num"].isin([x["row_num"].min(), x["row_num"].max()])])
+        df2.reset_index(drop=True, inplace=True)
+        df2.fillna(0, inplace=True)
+        calc_country = dict()
 
         for x in country:
-            for y in year_list:
+            for y in year2:
+                if len(df2[(df2["Region"] == x) & (df2["Year"] == str(y))]) == 1:
+                    continue
                 nomi = float(
                     df2[
                         (df2["Region"] == x)
-                        & (df2["row_num"] == 1)
+                        & (df2["row_num"] == df2["row_num"].min())
                         & (df2["Year"] == str(y))
                     ]["Value"].values[0]
                 )
                 denomi = float(
                     df2[
                         (df2["Region"] == x)
-                        & (df2["row_num"] != 1)
+                        & (df2["row_num"] == df2["row_num"].max())
                         & (df2["Year"] == str(y))
                     ]["Value"].values[0]
                 )
-                calc = ((nomi / denomi) - 1) * 100
+                calc = 0 if nomi == 0 and denomi == 0 else ((nomi / denomi) - 1) * 100
                 if calc_country.get(x) == None:
                     calc_country.update({x: {y: calc}})
                 else:
@@ -280,14 +265,14 @@ class Data:
             {"index": "Year"}, axis=1
         )
         region_sort = list(
-            df[(df["Year"] == "2024")].sort_values(by="Value", ascending=False)[
+            df[(df["Year"] == df['Year'].unique()[-1])].sort_values(by="Value", ascending=False)[
                 "Region"
             ]
         )
         df["Region"] = pd.Categorical(
             df["Region"], categories=region_sort, ordered=True
         )
-        df = df.sort_values(by="Region", ascending=False)
+        df = df.sort_values(by=["Region", 'Year'], ascending=False)
         return df
 
     def cds(self):
