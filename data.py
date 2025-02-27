@@ -224,7 +224,7 @@ class Data:
         df2["Year"] = df2["Date"].apply(lambda x: x.date().strftime("%Y"))
         df2["Date2"] = df2["Date"].apply(lambda x: x.date().strftime("%Y-%m"))
         year_now = datetime.date.today().year
-        year2 = [str(x) for x in range(2020, year_now+1)]
+        year2 = [str(x) for x in range(2020, year_now + 1)]
         latest_year = int(sorted(df2["Year"].unique())[-1])
         country = df2["Region"].unique()
 
@@ -232,7 +232,9 @@ class Data:
             f'select Date2 as Date, Year, Region, Value, row_number() over(partition by Region, Year order by Date2) as row_num from df2 where Year in ("{'", "'.join(year2)}")'
         )
 
-        df2 = df2.groupby("Year").apply(lambda x: x[x["row_num"].isin([x["row_num"].min(), x["row_num"].max()])])
+        df2 = df2.groupby("Year").apply(
+            lambda x: x[x["row_num"].isin([x["row_num"].min(), x["row_num"].max()])]
+        )
         df2.reset_index(drop=True, inplace=True)
         df2.fillna(0, inplace=True)
         calc_country = dict()
@@ -265,14 +267,14 @@ class Data:
             {"index": "Year"}, axis=1
         )
         region_sort = list(
-            df[(df["Year"] == df['Year'].unique()[-1])].sort_values(by="Value", ascending=False)[
-                "Region"
-            ]
+            df[(df["Year"] == df["Year"].unique()[-1])].sort_values(
+                by="Value", ascending=False
+            )["Region"]
         )
         df["Region"] = pd.Categorical(
             df["Region"], categories=region_sort, ordered=True
         )
-        df = df.sort_values(by=["Region", 'Year'], ascending=False)
+        df = df.sort_values(by=["Region", "Year"], ascending=False)
         return df
 
     def cds(self):

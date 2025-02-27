@@ -5,6 +5,7 @@ from shiny import App, ui, render, reactive
 from data import Data
 import logging
 import pandas as pd
+from processed_data import dfs, dataF
 
 # import shinyswatch
 from shinywidgets import render_plotly, output_widget
@@ -13,30 +14,8 @@ from cache_pandas import timed_lru_cache
 import plotly.graph_objects as go
 
 
-@timed_lru_cache(seconds=None, maxsize=None)
-def dataF():
-    logging.info("Fetching data in dataF()")
-    df = Data()
-    vix_data = df.vix_history()
-    policy_rate1, policy_rate2, policy_rate3 = df.policy_rate()
-    fx = df.forex_exchange()
-    cds = df.cds()
-    liquidity = df.liquidity()
-    gdp_growth = df.gdp_growth()
-    logging.info("Completed fetching data in dataF()")
-    return (
-        vix_data,
-        policy_rate1,
-        policy_rate2,
-        policy_rate3,
-        fx,
-        cds,
-        liquidity,
-        gdp_growth,
-    )
-
-
-all_var = dataF()
+# all_df = dataF() -- dev use this
+all_df = dfs() # publish use this
 
 app_ui = ui.page_fluid(
     ui.navset_tab(
@@ -56,8 +35,8 @@ app_ui = ui.page_fluid(
                             ui.input_date_range(
                                 "date_range",
                                 "Select Date Range - Vix:",
-                                start=all_var[0]["Date"].min(),
-                                end=all_var[0]["Date"].max(),
+                                start=all_df[0]["Date"].min(),
+                                end=all_df[0]["Date"].max(),
                             ),
                             output_widget("hist"),
                             col_widths={"sm": (12, 12)},
@@ -71,8 +50,8 @@ app_ui = ui.page_fluid(
                             ui.input_date_range(
                                 "date_range2",
                                 "Select Date Range - Policy Rate:",
-                                start=all_var[1]["Date"].min(),
-                                end=all_var[1]["Date"].max(),
+                                start=all_df[1]["Date"].min(),
+                                end=all_df[1]["Date"].max(),
                             ),
                             ui.input_selectize(
                                 "var",
@@ -98,27 +77,27 @@ app_ui = ui.page_fluid(
                     ),
                     ui.card(
                         ui.card_header("Exchange Rate Changes"),
-                            ui.layout_columns(
+                        ui.layout_columns(
                             ui.input_checkbox_group(
                                 "ex_rate",
-                                "Exchange Rate Changes",  
+                                "Exchange Rate Changes",
                                 choices=list(
-                                    all_var[4]["Year"].unique()
+                                    all_df[4]["Year"].unique()
                                 ),  # Ensure it's a list, not a dict
-                                selected=list(all_var[4]["Year"].unique()),
+                                selected=list(all_df[4]["Year"].unique()),
                                 inline=True,
                             ),
                             ui.input_radio_buttons(
                                 "ex_rate2",
                                 "Select Order by Year",
-                                choices=list(all_var[4]["Year"].unique()),
-                                selected=sorted(all_var[4]["Year"].unique())[-1],
+                                choices=list(all_df[4]["Year"].unique()),
+                                selected=sorted(all_df[4]["Year"].unique())[-1],
                                 inline=True,
                             ),
                             output_widget("hist2"),
                             col_widths={"sm": (6, 6, 12)},
                             row_heights=["auto", 1],
-                        ),                        
+                        ),
                         ui.card_footer(
                             """Notes: Year-to-date values are computed as the monthly difference between the first and last data points within a year. 
                                        Positive changes refer to an appreciation of the local currency versus the U.S. dollar, and negative changes refer to depreciation. 
@@ -132,8 +111,8 @@ app_ui = ui.page_fluid(
                             ui.input_date_range(
                                 "date_range3",
                                 "Select Date Range - CDS:",
-                                start=all_var[5]["Date"].min(),
-                                end=all_var[5]["Date"].max(),
+                                start=all_df[5]["Date"].min(),
+                                end=all_df[5]["Date"].max(),
                             ),
                             output_widget("hist3"),
                             ui.card_footer(
@@ -153,9 +132,9 @@ app_ui = ui.page_fluid(
                                 "gdp_quarterly",
                                 "GDP Quarterly",  # {x:x for x in all_var[7]['Quarter'].unique()}, selected=all_var[7]['Quarter'].unique(),
                                 choices=list(
-                                    all_var[7]["Quarter"].unique()
+                                    all_df[7]["Quarter"].unique()
                                 ),  # Ensure it's a list, not a dict
-                                selected=list(all_var[7]["Quarter"].unique()),
+                                selected=list(all_df[7]["Quarter"].unique()),
                                 inline=True,
                             ),
                             output_widget("hist5"),
@@ -199,19 +178,19 @@ def server(input, output, session):
         return filt_df
 
     filltered_vix = reactive.Calc(
-        lambda: parent_filtered_df(all_var[0], input.date_range())
+        lambda: parent_filtered_df(all_df[0], input.date_range())
     )
     filltered_pr1 = reactive.Calc(
-        lambda: parent_filtered_df(all_var[1], input.date_range2())
+        lambda: parent_filtered_df(all_df[1], input.date_range2())
     )
     filltered_pr2 = reactive.Calc(
-        lambda: parent_filtered_df(all_var[2], input.date_range2())
+        lambda: parent_filtered_df(all_df[2], input.date_range2())
     )
     filltered_pr3 = reactive.Calc(
-        lambda: parent_filtered_df(all_var[3], input.date_range2())
+        lambda: parent_filtered_df(all_df[3], input.date_range2())
     )
     filltered_cds = reactive.Calc(
-        lambda: parent_filtered_df(all_var[5], input.date_range3())
+        lambda: parent_filtered_df(all_df[5], input.date_range3())
     )
 
     @render_plotly
@@ -244,16 +223,16 @@ def server(input, output, session):
 
     @render_plotly
     def hist2():
-        fx = all_var[4]        
+        fx = all_df[4]
         region_sort = list(
-            fx[(fx["Year"] == input.ex_rate2())].sort_values(by="Value", ascending=False)[
-                "Region"
-            ]
+            fx[(fx["Year"] == input.ex_rate2())].sort_values(
+                by="Value", ascending=False
+            )["Region"]
         )
         fx["Region"] = pd.Categorical(
             fx["Region"], categories=region_sort, ordered=True
         )
-        fx = fx.sort_values(by=["Region", 'Year'], ascending=False)
+        fx = fx.sort_values(by=["Region", "Year"], ascending=False)
         fx = fx[fx["Year"].isin(input.ex_rate())]
         fig = px.histogram(
             fx,
@@ -275,7 +254,7 @@ def server(input, output, session):
 
     @render_plotly
     def hist4():
-        liquidity = all_var[6]
+        liquidity = all_df[6]
         fig = px.histogram(
             liquidity,
             x="TIME_PERIOD",
@@ -288,7 +267,7 @@ def server(input, output, session):
 
     @render_plotly
     def hist5():
-        gdp_growth = all_var[7]
+        gdp_growth = all_df[7]
         gdp_growth = gdp_growth[gdp_growth["Quarter"].isin(input.gdp_quarterly())]
         fig = px.histogram(
             gdp_growth,
