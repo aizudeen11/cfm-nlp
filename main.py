@@ -1,11 +1,11 @@
 # shiny run --reload --launch-browser cfm-nlp/main.py
 # shiny run --reload --launch-browser main.py
-
+# SHIFT + END to go to end of line
 from shiny import App, ui, render, reactive
-from data import Data
+# from data import Data
 import logging
 import pandas as pd
-from processed_data import dfs, dataF
+from processed_data import dfs#, dataF
 
 # import shinyswatch
 from shinywidgets import render_plotly, output_widget
