@@ -45,7 +45,7 @@ def dfs():
             ["Indonesia", "India", "Malaysia", "Chinese Taipei", "Vietnam"]
         )
     ]
-    print(f"BytesIO method:{t2 - t1} seconds")
+    print(f"Read excel method:{t2 - t1} seconds")
 
     return (
         vix_data,
