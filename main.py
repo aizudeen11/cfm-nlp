@@ -17,6 +17,17 @@ import plotly.graph_objects as go
 # all_df = dataF() -- dev use this
 all_df = dfs() # publish use this
 
+@timed_lru_cache(seconds=None, maxsize=None)
+def ex_rate_diff():
+    ex_rate_df = all_df[4]
+    years = sorted(list(ex_rate_df["Year"].unique()))[-2:]
+    ex_rate_df = ex_rate_df[ex_rate_df["Year"].isin(years)]
+    ex_rate_df['diff'] = ex_rate_df.groupby('Region')['Value'].diff(-1)
+    ex_rate_df.dropna(inplace=True)
+    ex_rate_df = ex_rate_df.iloc[::-1]
+    ex_rate_df['diff'] = ex_rate_df['diff'].round(2)
+    return ex_rate_df, years
+
 app_ui = ui.page_fluid(
     ui.navset_tab(
         ui.nav_panel(
@@ -84,7 +95,7 @@ app_ui = ui.page_fluid(
                                 choices=list(
                                     all_df[4]["Year"].unique()
                                 ),  # Ensure it's a list, not a dict
-                                selected=list(all_df[4]["Year"].unique()),
+                                selected=list(all_df[4]["Year"].unique())[:2],
                                 inline=True,
                             ),
                             ui.input_radio_buttons(
@@ -95,7 +106,8 @@ app_ui = ui.page_fluid(
                                 inline=True,
                             ),
                             output_widget("hist2"),
-                            col_widths={"sm": (6, 6, 12)},
+                            ui.tags.div(ui.output_ui("styled_table")),
+                            col_widths={"sm": (6, 6, 8, 4)},
                             row_heights=["auto", 1],
                         ),
                         ui.card_footer(
@@ -164,9 +176,27 @@ app_ui = ui.page_fluid(
 
 
 def server(input, output, session):
-    logging.basicConfig(
-        level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
-    )
+    @output
+    @render.ui
+    def styled_table():
+        ex_rate_diff_df, years = ex_rate_diff()
+        table_html = f"""
+        <table class='table table-bordered table-striped'>
+            <thead>
+                <tr>
+                    <th>Region</th>
+                    <th>Diff: ({years[1]} - {years[0]})</th>
+                </tr>
+            </thead>
+            <tbody>
+        """
+
+        for _, row in ex_rate_diff_df.iterrows():
+            row_class = "table-success" if row["diff"] > 0 else "table-danger"
+            table_html += f"<tr class='{row_class}'><td>{row['Region']}</td><td>{row['diff']}</td></tr>"
+
+        table_html += "</tbody></table>"
+        return ui.HTML(table_html)
 
     def parent_filtered_df(df, input_date_range):
         start_date, end_date = input_date_range

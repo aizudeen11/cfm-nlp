@@ -1,7 +1,9 @@
 import pandas as pd
 from pandasql import sqldf
 import datetime
-
+import numpy as np
+import warnings
+warnings.filterwarnings("ignore")
 # use min max()
 
 
@@ -305,6 +307,97 @@ class Data:
         )
         df = df[["TIME_PERIOD", "OBS_VALUE"]]
         return df
+    
+    def financial_stress_index(self):
+        yield_data1 = pd.read_excel(r"C:\Users\AhmadAizudeen\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Roger and Aizudeen\00 dlx.xlsx", header=1)
+        yield_data1 = yield_data1[[*yield_data1.columns[[0,1,3]]]]
+        yield_data1.drop([0,1,2], inplace=True)
+        yield_data1.rename(columns={'.DESC': 'Date',
+                                'Indonesia: 10 Year Treasury Bond Mid Yield (% p.a.)': 'Indonesia',
+                                'Philippines: 10 Year Treasury Bond Mid Yield (% p.a.)': 'Philippines'},
+                            inplace=True)
+
+        # yield_data1["Date"] = pd.to_datetime(yield_data1["Date"], errors='coerce') + pd.offsets.MonthEnd(0)
+        yield_data1['Month'] = yield_data1['Date'].apply(lambda x: x[:3])
+        yield_data1['Year'] = yield_data1['Date'].apply(lambda x: x[-2:])
+        yield_data1["Date"] = yield_data1.apply(lambda x: pd.to_datetime(f"{x['Month']} {x['Year']}", format='%b %y') + pd.offsets.MonthEnd(0), axis=1)
+        yield_data1.drop(['Month', 'Year'], axis=1, inplace=True)
+        yield_data2 = pd.read_excel(r"C:\Users\AhmadAizudeen\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Capital Flow Monitor\SEACEN CFM January 2025\edited files\Data\Financial Stress Indices.xlsx"
+                                    , sheet_name='Yields2'
+                                    , header=1)
+        yield_data2=yield_data2[yield_data2.columns[:11]]
+        yield_data2.drop([0,1], inplace=True)
+        yield_data2.rename(columns={'Region': 'Date'}, inplace=True)
+        yield_data2["Date"] = pd.to_datetime(yield_data2["Date"]) + pd.offsets.MonthEnd(0)
+        yield_data2.drop('Philippines', axis=1, inplace=True)
+
+        yield_data = yield_data2.join(yield_data1.set_index('Date'), on='Date')
+        yield_data.set_index('Date', inplace=True)
+
+        yield_data_calc = yield_data.apply(lambda x : x - x['United States'], axis =1)
+        yield_data_calc.drop('United States', axis=1, inplace=True)
+        yield_data_calc = yield_data_calc.loc[yield_data_calc.index >= "2010-01-31"]
+        yield_data_calc['Asia'] = yield_data_calc.mean(axis= 1)
+        yield_data_calc = (yield_data_calc - yield_data_calc.mean()) / yield_data_calc.std()
+        
+        key_dict = {
+            'Select this link and click Refresh/Edit Download to update data and add or remove series': 'Date',
+            'Index: Shenzhen Stock Exchange: Composite': 'China',
+            'Equity Market Index: Month End: Hang Seng': 'Hong Kong SAR (China)',
+            'Equity Market Index: Month End: BSE: Sensitive 30 (Sensex)': 'India',
+            'Equity Market Index: Month End: Jakarta Composite': 'Indonesia',
+            'Equity Market Index: Month End: FTSE Bursa Malaysia: Composite': 'Malaysia',
+            'Equity Market Index: Month End: PSEi': 'Philippines',
+            'Equity Market Index: Month End: FTSE Strait Times': 'Singapore',
+            'Equity Market Index: Month End: KOSPI': 'South Korea',
+            'TWSE: Equity Market Index: TAIEX Capitalization Weighted: Month Avg': 'Taiwan',
+            'Equity Market Index: Month End: SET': 'Thailand',
+        }
+
+
+        stock_data = pd.read_excel(r'C:\Users\AhmadAizudeen\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Capital Flow Monitor\SEACEN CFM January 2025\edited files\Data\Financial Stress Indices.xlsx', sheet_name='Stock Price Indexes')
+        stock_data = stock_data[key_dict.keys()]
+        stock_data.drop([0,1,2], inplace=True)
+        stock_data.rename(columns=key_dict, inplace=True)
+        stock_data2 = stock_data.copy()
+        stock_data2["Date"] = pd.to_datetime(stock_data2["Date"]) + pd.offsets.MonthEnd(0)
+        stock_data2.set_index('Date', inplace=True)
+        stock_data2 = stock_data2.loc[stock_data2.index >= "2009-01-01"]
+        stock_data2 = stock_data2.astype(float)
+
+        stock_data_calc = stock_data2.apply(lambda x : np.log(x))
+        stock_data_calc = (stock_data_calc.shift(1) - stock_data_calc) * 100 ## can use pandas .diff() function
+        stock_data_calc['Asia'] = stock_data_calc.mean(axis=1)
+        stock_data_calc = stock_data_calc.loc[stock_data_calc.index >= "2010-01-01"]
+        stock_data_calc = (stock_data_calc - stock_data_calc.mean())/stock_data_calc.std()
+
+        country_list = ['Region', 'China', 'Hong Kong SAR (China)', 'India', 'Indonesia', 'Malaysia', 'Philippines', 'Singapore', 'South Korea', 'Taiwan', 'Thailand']
+        fx = pd.read_excel(r'C:\Users\AhmadAizudeen\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Capital Flow Monitor\SEACEN CFM January 2025\edited files\Data\Financial Stress Indices.xlsx', sheet_name='FX', header=1)
+        fx.drop([0,1], inplace=True)
+        fx = fx[country_list]
+        fx.rename(columns={'Region': 'Date'}, inplace=True)
+        fx["Date"] = pd.to_datetime(fx["Date"]) + pd.offsets.MonthEnd(0) 
+        fx.set_index('Date', inplace=True) 
+        fx = fx.loc[fx.index >= "2009-12-31"]
+        fx = fx.astype(float)
+        fx = ((fx / fx.shift(1))-1) * 100
+        fx['Asia'] = fx.mean(axis=1)
+        fx = (fx - fx.mean())/fx.std()
+
+        ora = pd.read_excel(r'C:\Users\AhmadAizudeen\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Capital Flow Monitor\SEACEN CFM January 2025\edited files\Data\Financial Stress Indices.xlsx', sheet_name='ORA', header=1)
+        ora.drop([0,1], inplace=True)
+        ora = ora[country_list]
+        ora.rename(columns={'Region': 'Date'}, inplace=True)
+        ora["Date"] = pd.to_datetime(ora["Date"]) + pd.offsets.MonthEnd(0)
+        ora.set_index('Date', inplace=True)
+        ora = ora.loc[ora.index >= "2009-12-31"]
+        ora = ora.astype(float)
+        ora = ora/1000
+        ora = ((ora.shift(1) / ora)-1) * 100
+        ora['Asia'] = ora.mean(axis=1)
+        ora = (ora - ora.mean())/ora.std()
+
+        empi = fx - ora
 
     def all_df(self):
         vix = self.vix_history()
