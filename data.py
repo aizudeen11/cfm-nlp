@@ -368,8 +368,94 @@ class Data:
         stock_data_calc = stock_data2.apply(lambda x : np.log(x))
         stock_data_calc = (stock_data_calc.shift(1) - stock_data_calc) * 100 ## can use pandas .diff() function
         stock_data_calc['Asia'] = stock_data_calc.mean(axis=1)
-        stock_data_calc = stock_data_calc.loc[stock_data_calc.index >= "2010-01-01"]
-        stock_data_calc = (stock_data_calc - stock_data_calc.mean())/stock_data_calc.std()
+        stock_data_calc2 = (stock_data_calc - stock_data_calc.mean())/stock_data_calc.std()
+        stock_data_calc2 = stock_data_calc2.loc[stock_data_calc2.index >= "2010-01-01"]
+
+        key_dict_fb = {
+            'Select this link and click Refresh/Edit Download to update data and add or remove series': 'Date',
+            'Index: Shenzhen Stock Exchange: Financials': 'China',
+            'Index: Hang Seng Finance': 'Hong Kong SAR (China)',
+            'BSE: Index: Bankex': 'India',
+            '(DC)IDX: Index: Finance': 'Indonesia1',
+            'IDX: Index: Financials': 'Indonesia2',
+            'Bursa Malaysia: Index: Financial Services': 'Malaysia',
+            'Index: BankingFinancial Services': 'Philippines',
+            'Equity Market Index: Month End: FTSE Strait Times':'Singapore1',
+            'Singapore Exchange Turnover: Value: Mainboard': 'Singapore2',
+            'Singapore Exchange Turnover: Value: Mainboard: Financials': 'Singapore3',
+            'Index: KOSPI: Financial Institutions': 'South Korea',
+            'TWSE: Equity Market Index: Finance and Insurance': 'Taiwan',
+            'SET: Index: Banking': 'Thailand1', #T
+            'SET: Index: Finance and Securities': 'Thailand2', #V
+            'SET: Index: Insurance': 'Thailand3', #U
+            'SET: Market Capitalization: Banking': 'Thailand4', #X
+            'SET: Market Capitalization: Finance and Securities': 'Thailand5', #Y
+            'SET: Market Capitalization: Insurance': 'Thailand6', #Z
+            'Financial Index': 'Financial Index1',
+            }
+        fb = pd.read_excel(r'C:\Users\AhmadAizudeen\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Capital Flow Monitor\SEACEN CFM January 2025\edited files\Data\Financial Stress Indices.xlsx', sheet_name='Stock Price Indexes')
+        fb = fb[key_dict_fb.keys()]
+        fb.drop([0,1,2], inplace=True)
+        fb.rename(columns=key_dict_fb, inplace=True)
+        fb.reset_index(drop=True, inplace=True)
+        fb['Date'] = pd.to_datetime(fb['Date']) + pd.offsets.MonthEnd(0) 
+        fb_sg = fb[['Date', 'Singapore1', 'Singapore2', 'Singapore3']]
+        fb_sg['Date'] = pd.to_datetime(fb_sg['Date']) + pd.offsets.MonthEnd(0) 
+        fb_sg['Nonfinancials'] = fb_sg['Singapore2'] - fb_sg['Singapore3']
+        fb_sg['weigths_financial'] = fb_sg['Singapore3'] / fb_sg['Singapore2']
+        fb_sg['weigths_nonfinancial'] = fb_sg['Nonfinancials'] / fb_sg['Singapore2']
+        fb_sg['Price_Growth'] = ((fb_sg['Singapore1'] / fb_sg['Singapore1'].shift(1))-1) * 100
+        fb_sg['Financial_Growth'] = fb_sg['Price_Growth'] * fb_sg['weigths_financial']
+        fb_sg['Financial Index - SG'] = np.nan
+        fb_sg.reset_index(drop=True, inplace=True)
+        fb_sg.at[0, 'Financial Index - SG'] = 100
+
+        set_base_sg = pd.to_datetime('2008-12-01') + pd.offsets.MonthEnd(0)
+        for i in range(1, len(fb_sg)):
+            if set_base_sg is not None:
+                if fb_sg.at[i, 'Date'] == set_base_sg: # set when the base date 
+                    fb_sg.at[i, 'Financial Index - SG'] = 100
+                else:
+                    fb_sg.at[i, 'Financial Index - SG'] = fb_sg.at[i-1, 'Financial Index - SG'] * ((fb_sg.at[i, 'Financial_Growth'] / 100) + 1)
+            else:
+                fb_sg.at[i, 'Financial Index - SG'] = fb_sg.at[i-1, 'Financial Index - SG'] * ((fb_sg.at[i, 'Financial_Growth'] / 100) + 1)
+
+        fb_th = fb[['Date', 'Thailand1', 'Thailand2', 'Thailand3', 'Thailand4', 'Thailand5', 'Thailand6']]
+        fb_th['Date'] = pd.to_datetime(fb_th['Date']) + pd.offsets.MonthEnd(0) 
+        fb_th['growth_banking'] = ((fb_th['Thailand1'] / fb_th['Thailand1'].shift(1))-1) * 100
+        fb_th['growth_finance'] = ((fb_th['Thailand2'] / fb_th['Thailand2'].shift(1))-1) * 100
+        fb_th['growth_insurance'] = ((fb_th['Thailand3'] / fb_th['Thailand3'].shift(1))-1) * 100   
+        fb_th['weight_banking'] = fb_th['Thailand4'] / (fb_th['Thailand4'] + fb_th['Thailand5'] + fb_th['Thailand6'])
+        fb_th['weight_finance'] = fb_th['Thailand5'] / (fb_th['Thailand4'] + fb_th['Thailand5'] + fb_th['Thailand6'])
+        fb_th['weight_insurance'] = fb_th['Thailand6'] / (fb_th['Thailand4'] + fb_th['Thailand5'] + fb_th['Thailand6'])
+        fb_th['financial_growth'] = fb_th['growth_banking'] * fb_th['weight_banking']  + fb_th['growth_finance'] * fb_th['weight_finance'] + fb_th['growth_insurance'] * fb_th['weight_insurance']
+        fb_th['Financial Index - TH'] = np.nan
+        fb_th.reset_index(drop=True, inplace=True)
+        fb_th.at[0, 'Financial Index - TH'] = 100
+
+        set_base_th = None
+        for i in range(1, len(fb_th)):
+            if set_base_th is not None:
+                if fb_th.at[i, 'Date'] == pd.to_datetime('2008-12-01') + pd.offsets.MonthEnd(0): # set when the base date 
+                    fb_th.at[i, 'Financial Index - TH'] = 100
+                else:
+                    fb_th.at[i, 'Financial Index - TH'] = fb_th.at[i-1, 'Financial Index - TH'] * ((fb_th.at[i, 'financial_growth'] / 100) + 1)
+            else:
+                fb_th.at[i, 'Financial Index - TH'] = fb_th.at[i-1, 'Financial Index - TH'] * ((fb_th.at[i, 'financial_growth'] / 100) + 1)
+
+        fb_id_index = fb['Indonesia1'].isna().idxmax()
+        fb_id1 = fb[['Date', 'Indonesia1']]
+        fb_id1 = fb_id1[fb_id1.index < fb_id_index]
+        fb_id2 = fb[['Date', 'Indonesia2']]
+        fb_id2 = fb_id2[fb_id2.index >= fb_id_index]
+        fb_id1.rename(columns={'Indonesia1': 'Indonesia'}, inplace=True)
+        fb_id2.rename(columns={'Indonesia2': 'Indonesia'}, inplace=True)
+        fb_id = pd.concat([fb_id1, fb_id2])
+
+        fb_compile = pd.concat([fb[['Date', 'China', 'Hong Kong SAR (China)', 'India']], fb_id[['Indonesia']], fb[['Malaysia', 'Philippines']], fb_sg[['Financial Index - SG']], fb[['South Korea', 'Taiwan']], fb_th[['Financial Index - TH']]], axis=1)
+        fb_compile.set_index('Date', inplace=True)
+        fb_compile.rename(columns={'Financial Index - SG': 'Singapore', 'Financial Index - TH': 'Thailand'}, inplace=True)
+        fb_compile = fb_compile.astype(float)
 
         country_list = ['Region', 'China', 'Hong Kong SAR (China)', 'India', 'Indonesia', 'Malaysia', 'Philippines', 'Singapore', 'South Korea', 'Taiwan', 'Thailand']
         fx = pd.read_excel(r'C:\Users\AhmadAizudeen\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Capital Flow Monitor\SEACEN CFM January 2025\edited files\Data\Financial Stress Indices.xlsx', sheet_name='FX', header=1)
