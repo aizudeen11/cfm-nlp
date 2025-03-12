@@ -362,11 +362,12 @@ class Data:
         stock_data2 = stock_data.copy()
         stock_data2["Date"] = pd.to_datetime(stock_data2["Date"]) + pd.offsets.MonthEnd(0)
         stock_data2.set_index('Date', inplace=True)
-        stock_data2 = stock_data2.loc[stock_data2.index >= "2009-01-01"]
+        stock_data2 = stock_data2.loc[stock_data2.index >= "2008-12-01"]
         stock_data2 = stock_data2.astype(float)
 
         stock_data_calc = stock_data2.apply(lambda x : np.log(x))
         stock_data_calc = (stock_data_calc.shift(1) - stock_data_calc) * 100 ## can use pandas .diff() function
+        stock_data_calc = stock_data_calc.loc[stock_data_calc.index >= "2010-01-01"]
         stock_data_calc['Asia'] = stock_data_calc.mean(axis=1)
         stock_data_calc2 = (stock_data_calc - stock_data_calc.mean())/stock_data_calc.std()
         stock_data_calc2 = stock_data_calc2.loc[stock_data_calc2.index >= "2010-01-01"]
@@ -457,6 +458,25 @@ class Data:
         fb_compile.rename(columns={'Financial Index - SG': 'Singapore', 'Financial Index - TH': 'Thailand'}, inplace=True)
         fb_compile = fb_compile.astype(float)
 
+        fb_compile_calc = fb_compile.apply(lambda x : np.log(x))
+        fb_compile_calc = (fb_compile_calc.shift(1) - fb_compile_calc) * 100
+        fb_compile_calc['Asia'] = fb_compile_calc.mean(axis=1)
+
+        covariance = pd.DataFrame(index=stock_data_calc.index, columns=stock_data_calc.columns)
+        date_dict = {k:v for k,v in enumerate(stock_data_calc.index)}
+        for x in stock_data_calc.columns:
+            for i in range(1, len(stock_data_calc)-12):
+                covariance.at[date_dict[i+12], x] = np.cov(stock_data_calc.loc[date_dict[i]:date_dict[i+12], x].values, fb_compile_calc.loc[date_dict[i]:date_dict[i+12], x].values, bias=True)[0, 1]
+
+        variance = pd.DataFrame(index=stock_data_calc.index, columns=stock_data_calc.columns)
+        for x in stock_data_calc.columns:
+            for i in range(1, len(stock_data_calc)-12):
+                variance.at[date_dict[i+12], x] = np.var(stock_data_calc.loc[date_dict[i]:date_dict[i+12], x].values, ddof=1)
+
+        financial_sector_beta = covariance / variance
+        financial_sector_beta = (financial_sector_beta - financial_sector_beta.mean()) / financial_sector_beta.std()
+        financial_sector_beta = financial_sector_beta.applymap(lambda x: x if x > 1 else 0)
+
         country_list = ['Region', 'China', 'Hong Kong SAR (China)', 'India', 'Indonesia', 'Malaysia', 'Philippines', 'Singapore', 'South Korea', 'Taiwan', 'Thailand']
         fx = pd.read_excel(r'C:\Users\AhmadAizudeen\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Capital Flow Monitor\SEACEN CFM January 2025\edited files\Data\Financial Stress Indices.xlsx', sheet_name='FX', header=1)
         fx.drop([0,1], inplace=True)
@@ -484,6 +504,9 @@ class Data:
         ora = (ora - ora.mean())/ora.std()
 
         empi = fx - ora
+        yield_data_calc = yield_data_calc[stock_data_calc2.columns]
+
+        return yield_data_calc, stock_data_calc2, empi, financial_sector_beta
 
     def all_df(self):
         vix = self.vix_history()
