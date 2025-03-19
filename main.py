@@ -309,6 +309,21 @@ def server(input, output, session):
             title="GDP Growth by Region",
         )
         return fig
+    
+    @render_plotly
+    def hist6():
+        fsi = all_df[8]
+        fsi = fsi[fsi["Quarter"].isin(input.gdp_quarterly())]
+        fig = px.line(
+            fsi,
+            x="Quarter",
+            y="Value",
+            color="Region",
+            markers=True,
+            # orientation="h",
+            title="GDP Growth by Region",
+        )
+        return fig
 
 
 app = App(app_ui, server)

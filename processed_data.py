@@ -9,7 +9,8 @@ from cache_pandas import timed_lru_cache
 import os
 
 path = os.getcwd()
-path = path + r"\cfm-nlp\test.xlsx"
+path1 = path + r"\cfm-nlp\test.xlsx"
+path2 = path + r"\cfm-nlp\financial stress index.xlsx"
 print(path)
 
 
@@ -17,13 +18,14 @@ print(path)
 @timed_lru_cache(seconds=None, maxsize=None)
 def dfs():
     t1 = time.perf_counter()
-    vix_data = pd.read_excel(path, sheet_name="vix_data")
-    policy_rate1 = pd.read_excel(path, sheet_name="policy_rate1")
-    fx = pd.read_excel(path, sheet_name="fx")
+    vix_data = pd.read_excel(path1, sheet_name="vix_data")
+    policy_rate1 = pd.read_excel(path1, sheet_name="policy_rate1")
+    fx = pd.read_excel(path1, sheet_name="fx")
     fx['Year'] = fx['Year'].astype(str)
-    cds = pd.read_excel(path, sheet_name="cds")
-    liquidity = pd.read_excel(path, sheet_name="liquidity")
-    gdp_growth = pd.read_excel(path, sheet_name="gdp_growth")
+    cds = pd.read_excel(path1, sheet_name="cds")
+    liquidity = pd.read_excel(path1, sheet_name="liquidity")
+    gdp_growth = pd.read_excel(path1, sheet_name="gdp_growth")
+    fsi = pd.read_excel(path2, sheet_name="fsi")
     t2 = time.perf_counter()
     policy_rate2 = policy_rate1[
         policy_rate1["Region"].isin(
@@ -56,6 +58,7 @@ def dfs():
         cds,
         liquidity,
         gdp_growth,
+        fsi
     )
 
 @timed_lru_cache(seconds=None, maxsize=None)

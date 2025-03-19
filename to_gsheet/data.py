@@ -3,6 +3,7 @@ from pandasql import sqldf
 import datetime
 import numpy as np
 import warnings
+from arch import arch_model
 warnings.filterwarnings("ignore")
 # use min max()
 
@@ -367,10 +368,10 @@ class Data:
 
         stock_data_calc = stock_data2.apply(lambda x : np.log(x))
         stock_data_calc = (stock_data_calc.shift(1) - stock_data_calc) * 100 ## can use pandas .diff() function
-        stock_data_calc = stock_data_calc.loc[stock_data_calc.index >= "2010-01-01"]
+        # stock_data_calc = stock_data_calc.loc[stock_data_calc.index >= "2009-01-01"] ##2010-01-01
         stock_data_calc['Asia'] = stock_data_calc.mean(axis=1)
         stock_data_calc2 = (stock_data_calc - stock_data_calc.mean())/stock_data_calc.std()
-        stock_data_calc2 = stock_data_calc2.loc[stock_data_calc2.index >= "2010-01-01"]
+        stock_data_calc2 = stock_data_calc2.loc[stock_data_calc2.index >= "2009-12-01"] ##2010-01-01
 
         key_dict_fb = {
             'Select this link and click Refresh/Edit Download to update data and add or remove series': 'Date',
@@ -506,7 +507,30 @@ class Data:
         empi = fx - ora
         yield_data_calc = yield_data_calc[stock_data_calc2.columns]
 
-        return yield_data_calc, stock_data_calc2, empi, financial_sector_beta
+        si_dict = stock_data_calc2.to_dict('list')
+        for x in si_dict:
+            am = arch_model(si_dict[x], lags=1, vol='GARCH', p=1, q=1) ##need to review maybe mean = 'AR'
+            res = am.fit(disp='off')
+            conditional_volatility = res.conditional_volatility
+            conditional_variance = conditional_volatility**2
+            si_dict[x] = conditional_variance
+
+        garch = pd.DataFrame(si_dict)
+        garch.set_index(stock_data_calc2.index, inplace=True)
+        garch = (garch - garch.mean()) / garch.std()
+
+        stock_data_calc2 = stock_data_calc2.loc[stock_data_calc2.index >= "2010-01-01"]
+        empi = empi.loc[empi.index >= "2010-01-01"]
+        financial_sector_beta = financial_sector_beta.loc[financial_sector_beta.index >= "2010-01-01"]
+        garch = garch.loc[garch.index >= "2010-01-01"]
+        yield_data_calc.fillna(0, inplace=True)
+
+        fsi = yield_data_calc + stock_data_calc2 + empi + financial_sector_beta + garch
+        fsi['Asia Advanced Economies'] = fsi[['Hong Kong SAR (China)', 'Singapore', 'South Korea', 'Taiwan']].mean(axis=1)
+        fsi['ASEAN-4'] = fsi[['Indonesia', 'Malaysia', 'Philippines', 'Thailand']].mean(axis=1)
+        
+
+        return yield_data_calc, stock_data_calc2, empi, financial_sector_beta, garch, fsi
 
     def all_df(self):
         vix = self.vix_history()
