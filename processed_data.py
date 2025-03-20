@@ -6,12 +6,12 @@ import time
 from cache_pandas import timed_lru_cache
 # from data import Data
 
-import os
+from pathlib import Path
 
-path = os.getcwd()
-path1 = path + r"\cfm-nlp\test.xlsx"
-path2 = path + r"\cfm-nlp\financial stress index.xlsx"
-print(path)
+path = Path(__file__).parent
+path1 = path / "test.xlsx"
+path2 = path / "financial stress index.xlsx"
+print(path2)
 
 
 # vix, policy_rate1, policy_rate2, policy_rate3, fx, cds, liquidity, gdp_growth

@@ -53,6 +53,11 @@ app_ui = ui.page_fluid(
                             col_widths={"sm": (12, 12)},
                             row_heights=["auto", 1],
                         ),
+                        ui.card_footer(
+                                """
+                                       Notes: The VIX index is a measure of market expectations of near-term volatility conveyed by S&P 500 stock index option prices.
+                                       """
+                            ),
                         full_screen=True,
                     ),
                     ui.card(
@@ -73,16 +78,16 @@ app_ui = ui.page_fluid(
                                     "Selected region 2",
                                 ],
                             ),
-                            output_widget("hist1"),
-                            ui.card_footer(
+                            output_widget("hist1"),                           
+                            col_widths={"sm": (6, 6, 12)},
+                            row_heights=["auto", 1],
+                        ),
+                        ui.card_footer(
                                 """Notes: The policy rate for the United States refers to the effective Fed Funds rate. Data for China pertains to the one-year 
                                        loan prime rate sourced from the Bank for International Settlements (BIS) Data Portal. The policy rate for the Euro Area is the 
                                        main refinancing fixed rate of the European Central Bank
                                        """
                             ),
-                            col_widths={"sm": (6, 6, 12, 12)},
-                            row_heights=["auto", 1],
-                        ),
                         # output_widget("hist1"),
                         full_screen=True,
                     ),
@@ -127,14 +132,14 @@ app_ui = ui.page_fluid(
                                 end=all_df[5]["Date"].max(),
                             ),
                             output_widget("hist3"),
-                            ui.card_footer(
-                                """
-                                           Note: 5-Year USD Credit Default Swap par mid-rate in basis points.
-                                       """
-                            ),
                             col_widths={"sm": (12, 12)},
                             row_heights=["auto", 1],
                         ),
+                        ui.card_footer(
+                            """
+                                Note: 5-Year USD Credit Default Swap par mid-rate in basis points.
+                            """
+                            ),
                         full_screen=True,
                     ),
                     ui.card(
@@ -162,7 +167,12 @@ app_ui = ui.page_fluid(
                         full_screen=True,
                     ),
                     ui.card(
-                        output_widget("hist4"),
+                        ui.card_header("Financial Stress Index"),
+                        ui.layout_columns(
+                            output_widget("hist6"),
+                            col_widths={"sm": (12)},
+                            row_heights=["auto", 1],
+                        ),
                         full_screen=True,
                     ),
                     fill=False,
@@ -312,16 +322,17 @@ def server(input, output, session):
     
     @render_plotly
     def hist6():
-        fsi = all_df[8]
-        fsi = fsi[fsi["Quarter"].isin(input.gdp_quarterly())]
+        fsi = all_df[8][['Date', 'China', 'India', 'ASEAN-5', 'Asia Advanced Economies', 'Asia']]
+        fsi = fsi.rename(columns={'ASEAN-5': 'ASEAN-4'})
+        # fsi = fsi[fsi["Quarter"].isin(input.gdp_quarterly())]
+        fsi = fsi.melt(id_vars=["Date"], var_name="Region", value_name="Value")
         fig = px.line(
             fsi,
-            x="Quarter",
+            x="Date",
             y="Value",
             color="Region",
             markers=True,
-            # orientation="h",
-            title="GDP Growth by Region",
+            title="Financial Stress Index",
         )
         return fig
 

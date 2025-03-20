@@ -246,18 +246,16 @@ class Data:
             for y in year2:
                 if len(df2[(df2["Region"] == x) & (df2["Year"] == str(y))]) == 1:
                     continue
+                df_temp = df2[
+                    (df2["Region"] == x)
+                    & (df2["Year"] == str(y))
+                ]
                 nomi = float(
-                    df2[
-                        (df2["Region"] == x)
-                        & (df2["row_num"] == df2["row_num"].min())
-                        & (df2["Year"] == str(y))
+                    df_temp[(df_temp["row_num"] == df_temp["row_num"].min())
                     ]["Value"].values[0]
                 )
                 denomi = float(
-                    df2[
-                        (df2["Region"] == x)
-                        & (df2["row_num"] == df2["row_num"].max())
-                        & (df2["Year"] == str(y))
+                    df_temp[(df_temp["row_num"] == df_temp["row_num"].max())
                     ]["Value"].values[0]
                 )
                 calc = 0 if nomi == 0 and denomi == 0 else ((nomi / denomi) - 1) * 100
@@ -531,6 +529,78 @@ class Data:
         
 
         return yield_data_calc, stock_data_calc2, empi, financial_sector_beta, garch, fsi
+
+    def sovereign_bond_ields(self):
+        df1 = pd.read_excel(
+            r"C:\Users\AhmadAizudeen\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Capital Flow Monitor\SEACEN CFM January 2025\edited files\Data\Section 1 Charts.xlsx",
+            sheet_name='Yields YTD',
+            header=1,
+        )
+        df2 = df1.drop([0, 1, 2]).reset_index(drop=True)
+        nan_ind = df2['.DESC'].isna().idxmax()
+        if nan_ind > 0:
+            df2 = df2.iloc[0:nan_ind]
+        col_rename = {x: x.split(':')[0] for x in df2.columns[1:]}
+        col_rename['.DESC'] = 'Date'
+        df2.rename(columns=col_rename, inplace=True)
+        df2['Date'] = pd.to_datetime(df2['Date']) + pd.offsets.MonthEnd(0)
+        df2 = df2[df2['Date'] >= '2021-01-31']
+        df2.fillna(0, inplace=True)
+        df2 = df2.melt(id_vars="Date", var_name="Region", value_name="Value")
+        df2["Date"] = pd.to_datetime(df2["Date"]) + pd.offsets.MonthEnd(0)
+        df2["Year"] = df2["Date"].apply(lambda x: x.date().strftime("%Y"))
+        df2["Date2"] = df2["Date"].apply(lambda x: x.date().strftime("%Y-%m"))
+        year_now = datetime.date.today().year
+        year2 = [str(x) for x in range(2021, year_now + 1)]
+        latest_year = int(sorted(df2["Year"].unique())[-1])
+        country = df2["Region"].unique()
+        df2 = sqldf(
+            f'select Date2 as Date, Year, Region, Value, row_number() over(partition by Region, Year order by Date2) as row_num from df2 where Year in ("{'", "'.join(year2)}")'
+        )
+
+        df2 = df2.groupby("Year").apply(
+            lambda x: x[x["row_num"].isin([x["row_num"].min(), x["row_num"].max()])]
+        )
+        df2.reset_index(drop=True, inplace=True)
+
+        calc_country = dict()
+
+        for x in country:
+            for y in year2:
+                if len(df2[(df2["Region"] == x) & (df2["Year"] == str(y))]) == 1:
+                    continue
+                df_temp = df2[
+                            (df2["Region"] == x)
+                            & (df2["Year"] == str(y))
+                        ]
+                nomi = float(
+                    df_temp[(df_temp["row_num"] == df_temp["row_num"].min())
+                    ]["Value"].values[0]
+                )
+                denomi = float(
+                    df_temp[(df_temp["row_num"] == df_temp["row_num"].max())
+                    ]["Value"].values[0]
+                )
+                calc = 0 if nomi == 0 and denomi == 0 else denomi - nomi
+                if calc_country.get(x) == None:
+                    calc_country.update({x: {y: calc}})
+                else:
+                    calc_country[x].update({y: calc})
+
+        df = pd.DataFrame(calc_country).reset_index()
+        df = df.melt(id_vars="index", var_name="Region", value_name="Value").rename(
+            {"index": "Year"}, axis=1
+        )
+        region_sort = list(
+            df[(df["Year"] == df["Year"].unique()[-1])].sort_values(
+                by="Value", ascending=False
+            )["Region"]
+        )
+        df["Region"] = pd.Categorical(
+            df["Region"], categories=region_sort, ordered=True
+        )
+        df = df.sort_values(by=["Region", "Year"], ascending=False)
+        return df 
 
     def all_df(self):
         vix = self.vix_history()
