@@ -238,6 +238,7 @@ class Data:
         df2 = df2.groupby("Year").apply(
             lambda x: x[x["row_num"].isin([x["row_num"].min(), x["row_num"].max()])]
         )
+        year2 = df2['Year'].unique()
         df2.reset_index(drop=True, inplace=True)
         df2.fillna(0, inplace=True)
         calc_country = dict()
@@ -530,7 +531,7 @@ class Data:
 
         return yield_data_calc, stock_data_calc2, empi, financial_sector_beta, garch, fsi
 
-    def sovereign_bond_ields(self):
+    def sovereign_bond_yields(self):
         df1 = pd.read_excel(
             r"C:\Users\AhmadAizudeen\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Capital Flow Monitor\SEACEN CFM January 2025\edited files\Data\Section 1 Charts.xlsx",
             sheet_name='Yields YTD',
@@ -561,6 +562,7 @@ class Data:
         df2 = df2.groupby("Year").apply(
             lambda x: x[x["row_num"].isin([x["row_num"].min(), x["row_num"].max()])]
         )
+        year2 = df2['Year'].unique()
         df2.reset_index(drop=True, inplace=True)
 
         calc_country = dict()
@@ -602,6 +604,70 @@ class Data:
         df = df.sort_values(by=["Region", "Year"], ascending=False)
         return df 
 
+    def stock_price_index(self):
+        df = pd.read_excel(r"C:\Users\AhmadAizudeen\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Capital Flow Monitor\SEACEN CFM January 2025\edited files\Data\Section 1 Charts.xlsx",
+            sheet_name='stock indices',
+            header=2)
+        df2 = df.drop([0,1])
+        df2.drop(columns=['Unnamed: 11', 'Unnamed: 12', '.T1'], inplace=True)
+        df2.rename(columns={'Dec-2006': 'Vietnam', 'Region': 'Date'}, inplace=True)
+        df2.reset_index(drop=True,inplace=True)
+        df2 = df2.iloc[:df2['Date'].isna().idxmax()]
+        df2 = df2.melt(id_vars="Date", var_name="Region", value_name="Value")
+        df2["Date"] = pd.to_datetime(df2["Date"]) + pd.offsets.MonthEnd(0)
+        df2["Year"] = df2["Date"].apply(lambda x: x.date().strftime("%Y"))
+        df2["Date2"] = df2["Date"].apply(lambda x: x.date().strftime("%Y-%m"))
+        year_now = datetime.date.today().year
+        year2 = [str(x) for x in range(2020, year_now + 1)]
+        country = df2["Region"].unique()
+        df2 = sqldf(
+                    f'select Date2 as Date, Year, Region, Value, row_number() over(partition by Region, Year order by Date2) as row_num from df2 where Year in ("{'", "'.join(year2)}")'
+                )
+        df2 = df2.groupby("Year").apply(
+                    lambda x: x[x["row_num"].isin([x["row_num"].min(), x["row_num"].max()])]
+                )
+        year2 = df2['Year'].unique() ## add this in fx
+        df2.reset_index(drop=True, inplace=True)
+        df2.fillna(0, inplace=True)
+        calc_country = dict()
+
+        for x in country:
+            for y in year2:
+                if len(df2[(df2["Region"] == x) & (df2["Year"] == str(y))]) == 1:
+                    continue
+                df_temp = df2[
+                    (df2["Region"] == x)
+                    & (df2["Year"] == str(y))
+                ]
+                denomi = float(
+                    df_temp[(df_temp["row_num"] == df_temp["row_num"].min())
+                    ]["Value"].values[0]
+                )
+                nomi = float(
+                    df_temp[(df_temp["row_num"] == df_temp["row_num"].max())
+                    ]["Value"].values[0]
+                )
+                calc = 0 if nomi == 0 and denomi == 0 else ((nomi / denomi) - 1) * 100
+                if calc_country.get(x) == None:
+                    calc_country.update({x: {y: calc}})
+                else:
+                    calc_country[x].update({y: calc})
+
+        df3 = pd.DataFrame(calc_country).reset_index()
+        df3 = df3.melt(id_vars="index", var_name="Region", value_name="Value").rename(
+            {"index": "Year"}, axis=1
+        )
+        region_sort = list(
+            df3[(df3["Year"] == df3["Year"].unique()[-1])].sort_values(
+                by="Value", ascending=False
+            )["Region"]
+        )
+        df3["Region"] = pd.Categorical(
+            df3["Region"], categories=region_sort, ordered=True
+        )
+        df3 = df3.sort_values(by=["Region", "Year"], ascending=False)
+        return df3
+    
     def all_df(self):
         vix = self.vix_history()
         policy_rate1, policy_rate2, policy_rate3 = self.policy_rate()

@@ -65,7 +65,9 @@ def dfs():
 def dfs1():
     t1 = time.perf_counter()
     url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS5DDYL_MTv8b1AsgYvUEDuxiIFq81-CR9Yccc4sL1pvv1wD2GyHNabQQiixJsRpwaxG59Qyg-Asr11/pub?output=xlsx"
+    url2 = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSRMFoOOi8AXat4kH62KTNp56FbRc7XN9sSioYbfzOzPU0TDYWqkNqxhu8rWtnUy6erG9WVp9noknFp/pub?output=xlsx'
     response = requests.get(url)
+    response2 = requests.get(url2)
     vix_data = pd.read_excel(BytesIO(response.content), sheet_name="vix_data")
     policy_rate1 = pd.read_excel(BytesIO(response.content), sheet_name="policy_rate1")
     fx = pd.read_excel(BytesIO(response.content), sheet_name="fx")
@@ -73,6 +75,7 @@ def dfs1():
     cds = pd.read_excel(BytesIO(response.content), sheet_name="cds")
     liquidity = pd.read_excel(BytesIO(response.content), sheet_name="liquidity")
     gdp_growth = pd.read_excel(BytesIO(response.content), sheet_name="gdp_growth")
+    fsi = pd.read_excel(BytesIO(response2.content), sheet_name="fsi")
     t2 = time.perf_counter()
     policy_rate2 = policy_rate1[
         policy_rate1["Region"].isin(
@@ -105,6 +108,7 @@ def dfs1():
         cds,
         liquidity,
         gdp_growth,
+        fsi
     )
 
 # @timed_lru_cache(seconds=None, maxsize=None)

@@ -5,7 +5,7 @@ from shiny import App, ui, render, reactive
 # from data import Data
 import logging
 import pandas as pd
-from processed_data import dfs#, dataF
+from processed_data import dfs, dfs1
 
 # import shinyswatch
 from shinywidgets import render_plotly, output_widget
@@ -15,7 +15,8 @@ import plotly.graph_objects as go
 
 
 # all_df = dataF() -- dev use this
-all_df = dfs() # publish use this
+all_df = dfs1() # publish use this
+# all_df = dfs()
 
 @timed_lru_cache(seconds=None, maxsize=None)
 def ex_rate_diff():
