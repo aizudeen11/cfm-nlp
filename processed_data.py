@@ -25,6 +25,10 @@ def dfs():
     cds = pd.read_excel(path1, sheet_name="cds")
     liquidity = pd.read_excel(path1, sheet_name="liquidity")
     gdp_growth = pd.read_excel(path1, sheet_name="gdp_growth")
+    stock_price_index = pd.read_excel(path1, sheet_name="stock_price_index")
+    stock_price_index = stock_price_index.astype({'Year': 'object', 'Region': 'object'})
+    sovereign_bond_yields = pd.read_excel(path1, sheet_name="sovereign_bond_yields")
+    sovereign_bond_yields = sovereign_bond_yields.astype({'Year': 'object', 'Region': 'object'})
     fsi = pd.read_excel(path2, sheet_name="fsi")
     t2 = time.perf_counter()
     policy_rate2 = policy_rate1[
@@ -58,7 +62,9 @@ def dfs():
         cds,
         liquidity,
         gdp_growth,
-        fsi
+        fsi,
+        stock_price_index,
+        sovereign_bond_yields
     )
 
 @timed_lru_cache(seconds=None, maxsize=None)
@@ -75,6 +81,10 @@ def dfs1():
     cds = pd.read_excel(BytesIO(response.content), sheet_name="cds")
     liquidity = pd.read_excel(BytesIO(response.content), sheet_name="liquidity")
     gdp_growth = pd.read_excel(BytesIO(response.content), sheet_name="gdp_growth")
+    stock_price_index = pd.read_excel(BytesIO(response.content), sheet_name="stock_price_index")
+    stock_price_index = stock_price_index.astype({'Year': 'object', 'Region': 'object'})
+    sovereign_bond_yields = pd.read_excel(BytesIO(response.content), sheet_name="sovereign_bond_yields")
+    sovereign_bond_yields = sovereign_bond_yields.astype({'Year': 'object', 'Region': 'object'})
     fsi = pd.read_excel(BytesIO(response2.content), sheet_name="fsi")
     t2 = time.perf_counter()
     policy_rate2 = policy_rate1[
@@ -108,7 +118,9 @@ def dfs1():
         cds,
         liquidity,
         gdp_growth,
-        fsi
+        fsi,
+        stock_price_index,
+        sovereign_bond_yields
     )
 
 # @timed_lru_cache(seconds=None, maxsize=None)

@@ -12,22 +12,25 @@ from shinywidgets import render_plotly, output_widget
 import plotly.express as px
 from cache_pandas import timed_lru_cache
 import plotly.graph_objects as go
+import warnings
 
+warnings.filterwarnings("ignore")
 
 # all_df = dataF() -- dev use this
-all_df = dfs1() # publish use this
-# all_df = dfs()
+# all_df = dfs1() # publish use this
+all_df = dfs() #dev use this
 
-@timed_lru_cache(seconds=None, maxsize=None)
-def ex_rate_diff():
-    ex_rate_df = all_df[4]
-    years = sorted(list(ex_rate_df["Year"].unique()))[-2:]
-    ex_rate_df = ex_rate_df[ex_rate_df["Year"].isin(years)]
-    ex_rate_df['diff'] = ex_rate_df.groupby('Region')['Value'].diff(-1)
-    ex_rate_df.dropna(inplace=True)
-    ex_rate_df = ex_rate_df.iloc[::-1]
-    ex_rate_df['diff'] = ex_rate_df['diff'].round(2)
-    return ex_rate_df, years
+def rate_diff_func(n):
+    @timed_lru_cache(seconds=None, maxsize=None)
+    def rate_diff():
+        rate_df = all_df[n]
+        years = sorted(list(rate_df["Year"].unique()))[-2:]
+        rate_df = rate_df[rate_df["Year"].isin(years)]
+        rate_df['diff'] = rate_df.groupby('Region')['Value'].diff(-1)
+        rate_df.dropna(inplace=True)
+        rate_df = rate_df.iloc[::-1]
+        rate_df['diff'] = rate_df['diff'].round(2)
+        return rate_df, years
 
 app_ui = ui.page_fluid(
     ui.navset_tab(
@@ -39,6 +42,7 @@ app_ui = ui.page_fluid(
                         ui.p("This is a sidebar"),
                     ),
                     title="Filter controls",
+                    open='closed'
                 ),
                 ui.layout_columns(
                     ui.card(
@@ -56,8 +60,8 @@ app_ui = ui.page_fluid(
                         ),
                         ui.card_footer(
                                 """
-                                       Notes: The VIX index is a measure of market expectations of near-term volatility conveyed by S&P 500 stock index option prices.
-                                       """
+                                Notes: The VIX index is a measure of market expectations of near-term volatility conveyed by S&P 500 stock index option prices.
+                                """
                             ),
                         full_screen=True,
                     ),
@@ -85,9 +89,9 @@ app_ui = ui.page_fluid(
                         ),
                         ui.card_footer(
                                 """Notes: The policy rate for the United States refers to the effective Fed Funds rate. Data for China pertains to the one-year 
-                                       loan prime rate sourced from the Bank for International Settlements (BIS) Data Portal. The policy rate for the Euro Area is the 
-                                       main refinancing fixed rate of the European Central Bank
-                                       """
+                                loan prime rate sourced from the Bank for International Settlements (BIS) Data Portal. The policy rate for the Euro Area is the 
+                                main refinancing fixed rate of the European Central Bank
+                                """
                             ),
                         # output_widget("hist1"),
                         full_screen=True,
@@ -118,8 +122,70 @@ app_ui = ui.page_fluid(
                         ),
                         ui.card_footer(
                             """Notes: Year-to-date values are computed as the monthly difference between the first and last data points within a year. 
-                                       Positive changes refer to an appreciation of the local currency versus the U.S. dollar, and negative changes refer to depreciation. 
-                                       """
+                            Positive changes refer to an appreciation of the local currency versus the U.S. dollar, and negative changes refer to depreciation. 
+                            """
+                        ),
+                        full_screen=True,
+                    ),
+                    ui.card(
+                        ui.card_header("Changes in Benchmark Stock Price Indices"),
+                        ui.layout_columns(
+                            ui.input_checkbox_group(
+                                "spi_rate",
+                                "Stock Price Indices",
+                                choices=list(
+                                    all_df[9]["Year"].unique()
+                                ),  # Ensure it's a list, not a dict
+                                selected=list(all_df[9]["Year"].unique())[:2],
+                                inline=True,
+                            ),
+                            ui.input_radio_buttons(
+                                "spi_rate2",
+                                "Select Order by Year",
+                                choices=list(all_df[9]["Year"].unique()),
+                                selected=sorted(all_df[9]["Year"].unique())[-1],
+                                inline=True,
+                            ),
+                            output_widget("hist7"),
+                            ui.tags.div(ui.output_ui("styled_table2")),
+                            col_widths={"sm": (6, 6, 8, 4)},
+                            row_heights=["auto", 1],
+                        ),
+                        ui.card_footer(
+                            """
+                            Notes: Year-to-date values are computed as the monthly difference between the first and last data points within a year. 
+                            """
+                        ),
+                        full_screen=True,
+                    ),
+                    ui.card(
+                        ui.card_header("Changes in Benchmark Sovereign Bond Yields"),
+                        ui.layout_columns(
+                            ui.input_checkbox_group(
+                                "sby_rate",
+                                "Sovereign Bond Yields",
+                                choices=list(
+                                    all_df[10]["Year"].unique()
+                                ),  # Ensure it's a list, not a dict
+                                selected=list(all_df[10]["Year"].unique())[:2],
+                                inline=True,
+                            ),
+                            ui.input_radio_buttons(
+                                "sby_rate2",
+                                "Select Order by Year",
+                                choices=list(all_df[10]["Year"].unique()),
+                                selected=sorted(all_df[10]["Year"].unique())[-1],
+                                inline=True,
+                            ),
+                            output_widget("hist8"),
+                            ui.tags.div(ui.output_ui("styled_table3")),
+                            col_widths={"sm": (6, 6, 8, 4)},
+                            row_heights=["auto", 1],
+                        ),
+                        ui.card_footer(
+                            """
+                            Note: Year-to-date values are computed as the monthly difference between the first and last data points within a year.
+                            """
                         ),
                         full_screen=True,
                     ),
@@ -138,7 +204,7 @@ app_ui = ui.page_fluid(
                         ),
                         ui.card_footer(
                             """
-                                Note: 5-Year USD Credit Default Swap par mid-rate in basis points.
+                            Note: 5-Year USD Credit Default Swap par mid-rate in basis points.
                             """
                             ),
                         full_screen=True,
@@ -161,18 +227,34 @@ app_ui = ui.page_fluid(
                         ),
                         ui.card_footer(
                             """
-                                       Notes: Regional growth rates are weighted averages of individual growth rates, using GDP in PPP as weights. Asia Economies include 
-                                       China, India, Mongolia, ASEAN-5 (Indonesia, Malaysia, Philippines, Thailand, and Vietnam), and Asia Advanced Economies (Hong Kong, 
-                                       China; Korea; Singapore; and Chinese Taipei)."""
+                                Notes: Regional growth rates are weighted averages of individual growth rates, using GDP in PPP as weights. Asia Economies include 
+                                China, India, Mongolia, ASEAN-5 (Indonesia, Malaysia, Philippines, Thailand, and Vietnam), and Asia Advanced Economies (Hong Kong, 
+                                China; Korea; Singapore; and Chinese Taipei).
+                            """
                         ),
                         full_screen=True,
                     ),
                     ui.card(
                         ui.card_header("Financial Stress Index"),
                         ui.layout_columns(
+                            ui.input_date_range(
+                                "date_range4",
+                                "Select Date Range - FSI:",
+                                start=all_df[8]["Date"].min(),
+                                end=all_df[8]["Date"].max(),
+                            ),
                             output_widget("hist6"),
                             col_widths={"sm": (12)},
                             row_heights=["auto", 1],
+                        ),
+                        ui.card_footer(
+                            """
+                                Notes: Advanced Asian Economies include Hong Kong, China; Korea; Singapore; and Chinese Taipei. ASEAN4 includes Indonesia, Malaysia, Philippines, 
+                                and Thailand. Financial stress indices for Advanced Asian Economies and ASEAN4 are computed as a simple average of individual country financial 
+                                stress indices. Individual country financial stress indices are calculated following the methodology of Park and Mercado (2014) but use financial 
+                                sector beta instead of banking sector beta. Financial market stress indices are computed starting in 2010. The threshold value represents two 
+                                standard deviations above the sample mean.
+                            """
                         ),
                         full_screen=True,
                     ),
@@ -187,10 +269,8 @@ app_ui = ui.page_fluid(
 
 
 def server(input, output, session):
-    @output
-    @render.ui
-    def styled_table():
-        ex_rate_diff_df, years = ex_rate_diff()
+    def styled_table_func(n):        
+        rate_diff_df, years = rate_diff_func(n)
         table_html = f"""
         <table class='table table-bordered table-striped'>
             <thead>
@@ -202,12 +282,27 @@ def server(input, output, session):
             <tbody>
         """
 
-        for _, row in ex_rate_diff_df.iterrows():
+        for _, row in rate_diff_df.iterrows():
             row_class = "table-success" if row["diff"] > 0 else "table-danger"
             table_html += f"<tr class='{row_class}'><td>{row['Region']}</td><td>{row['diff']}</td></tr>"
 
         table_html += "</tbody></table>"
         return ui.HTML(table_html)
+    
+    @output
+    @render.ui
+    def styled_table():
+        return styled_table_func(4)
+    
+    @output
+    @render.ui
+    def styled_table2():
+        return styled_table_func(9)
+    
+    @output
+    @render.ui
+    def styled_table3():
+        return styled_table_func(10)
 
     def parent_filtered_df(df, input_date_range):
         start_date, end_date = input_date_range
@@ -232,6 +327,9 @@ def server(input, output, session):
     )
     filltered_cds = reactive.Calc(
         lambda: parent_filtered_df(all_df[5], input.date_range3())
+    )
+    filltered_fsi = reactive.Calc(
+        lambda: parent_filtered_df(all_df[8], input.date_range4())
     )
 
     @render_plotly
@@ -323,7 +421,8 @@ def server(input, output, session):
     
     @render_plotly
     def hist6():
-        fsi = all_df[8][['Date', 'China', 'India', 'ASEAN-5', 'Asia Advanced Economies', 'Asia']]
+        fsi = filltered_fsi()
+        fsi = fsi[['Date', 'China', 'India', 'ASEAN-5', 'Asia Advanced Economies', 'Asia']]
         fsi = fsi.rename(columns={'ASEAN-5': 'ASEAN-4'})
         # fsi = fsi[fsi["Quarter"].isin(input.gdp_quarterly())]
         fsi = fsi.melt(id_vars=["Date"], var_name="Region", value_name="Value")
@@ -336,6 +435,56 @@ def server(input, output, session):
             title="Financial Stress Index",
         )
         return fig
-
+    
+    @render_plotly
+    def hist7():
+        spi = all_df[9]
+        region_sort = list(
+            spi[(spi["Year"] == int(input.spi_rate2()))].sort_values(
+                by="Value", ascending=False
+            )["Region"]
+        )
+        spi["Region"] = pd.Categorical(
+            spi["Region"], categories=region_sort, ordered=True
+        )
+        spi = spi.sort_values(by=["Region", "Year"], ascending=False)
+        spi = spi[spi["Year"].isin([int(x) for x in input.spi_rate()])]
+        fig = px.histogram(
+            spi,
+            x="Value",
+            y="Region",
+            color="Year",
+            barmode="group",
+            # orientation="h",
+            title="Stock Price Indices Changes",
+        )
+        
+        return fig
+    
+    @render_plotly
+    def hist8():
+        sby = all_df[10]
+        region_sort = list(
+            sby[(sby["Year"] == int(input.sby_rate2()))].sort_values(
+                by="Value", ascending=False
+            )["Region"]
+        )
+        sby["Region"] = pd.Categorical(
+            sby["Region"], categories=region_sort, ordered=True
+        )
+        sby = sby.sort_values(by=["Region", "Year"], ascending=False)
+        sby = sby[sby["Year"].isin([int(x) for x in input.sby_rate()])]
+        fig = px.histogram(
+            sby,
+            x="Value",
+            y="Region",
+            color="Year",
+            barmode="group",
+            # orientation="h",
+            title="Sovereign Bond Yields Changes",
+        )
+        
+        return fig
+    
 
 app = App(app_ui, server)

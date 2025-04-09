@@ -11,7 +11,6 @@ import logging
 
 @timed_lru_cache(seconds=None, maxsize=None)
 def dataF():
-    logging.info("Fetching data in dataF()")
     df = Data()
     vix_data = df.vix_history()
     policy_rate1, policy_rate2, policy_rate3 = df.policy_rate()
@@ -20,7 +19,8 @@ def dataF():
     liquidity = df.liquidity()
     gdp_growth = df.gdp_growth()
     yield_data_calc, stock_data_calc2, empi, financial_sector_beta, garch, fsi = df.financial_stress_index()
-    logging.info("Completed fetching data in dataF()")
+    stock_price_index = df.stock_price_index()
+    sovereign_bond_yields = df.sovereign_bond_yields()
     return (
         vix_data, #use this
         policy_rate1, #use this
@@ -35,15 +35,17 @@ def dataF():
         empi, 
         financial_sector_beta, 
         garch, 
-        fsi
+        fsi,
+        stock_price_index, #use this
+        sovereign_bond_yields, #use this
     )
 
 
-vix_data, policy_rate1, policy_rate2, policy_rate3, fx, cds, liquidity, gdp_growth, yield_data_calc, stock_data_calc2, empi, financial_sector_beta, garch, fsi = dataF()
+vix_data, policy_rate1, policy_rate2, policy_rate3, fx, cds, liquidity, gdp_growth, yield_data_calc, stock_data_calc2, empi, financial_sector_beta, garch, fsi, stock_price_index, sovereign_bond_yields = dataF()
 
 id_test = '11Ora6_5EoQJdgnUpjjZgFZyrILguo1c32mde_uQwupw'
 id_fsi = '1IK1wbkFNaRH9vFwXfhBYh_RSK-UXKbaGzbCoAQWWRjY'
-ws1 = {'vix_data': vix_data, 'policy_rate1': policy_rate1, 'fx': fx, 'cds': cds, 'liquidity': liquidity, 'gdp_growth': gdp_growth}
+ws1 = {'vix_data': vix_data, 'policy_rate1': policy_rate1, 'fx': fx, 'cds': cds, 'liquidity': liquidity, 'gdp_growth': gdp_growth, 'stock_price_index': stock_price_index, 'sovereign_bond_yields': sovereign_bond_yields}
 ws2 = {'yield_data_calc': yield_data_calc, 'stock_data_calc2': stock_data_calc2, 'empi': empi, 'financial_sector_beta': financial_sector_beta, 'garch': garch, 'fsi': fsi}
 
 for x in ws2:
@@ -74,7 +76,7 @@ def process(id, ws):
             sheet1 = sheet.add_worksheet(title=new_worksheet_name, rows=10, cols=10)
         set_with_dataframe(sheet1, data)
 
-# process(id_test, ws1)
+process(id_test, ws1)
 process(id_fsi, ws2)
 # sheet.worksheet(new_worksheet_name) -- to select worksheet page
 # sheet.add_worksheet(new_worksheet_name, rows=10, cols=10) -- add new worksheet page
