@@ -20,7 +20,7 @@ warnings.filterwarnings("ignore")
 # all_df = dfs1() # publish use this
 all_df = dfs() #dev use this
 
-def rate_diff_func(n):
+def rate_diff_func(n:int) -> tuple[pd.DataFrame, list[str|int]]:
     @timed_lru_cache(seconds=None, maxsize=None)
     def rate_diff():
         rate_df = all_df[n]
@@ -51,7 +51,7 @@ app_ui = ui.page_fluid(
                         ui.layout_columns(
                             ui.input_date_range(
                                 "date_range",
-                                "Select Date Range - Vix:",
+                                "Select Date Range:",
                                 start=all_df[0]["Date"].min(),
                                 end=all_df[0]["Date"].max(),
                             ),
@@ -71,13 +71,13 @@ app_ui = ui.page_fluid(
                         ui.layout_columns(
                             ui.input_date_range(
                                 "date_range2",
-                                "Select Date Range - Policy Rate:",
+                                "Select Date Range:",
                                 start=all_df[1]["Date"].min(),
                                 end=all_df[1]["Date"].max(),
                             ),
                             ui.input_selectize(
                                 "var",
-                                "Policy Rate",
+                                "Policy Rate by Region",
                                 choices=[
                                     "All region",
                                     "Selected region 1",
@@ -195,7 +195,7 @@ app_ui = ui.page_fluid(
                         ui.layout_columns(
                             ui.input_date_range(
                                 "date_range3",
-                                "Select Date Range - CDS:",
+                                "Select Date Range:",
                                 start=all_df[5]["Date"].min(),
                                 end=all_df[5]["Date"].max(),
                             ),
@@ -240,7 +240,7 @@ app_ui = ui.page_fluid(
                         ui.layout_columns(
                             ui.input_date_range(
                                 "date_range4",
-                                "Select Date Range - FSI:",
+                                "Select Date Range:",
                                 start=all_df[8]["Date"].min(),
                                 end=all_df[8]["Date"].max(),
                             ),
@@ -264,7 +264,7 @@ app_ui = ui.page_fluid(
                         ui.layout_columns(
                             ui.input_date_range(
                                 "date_range5",
-                                "Select Date Range - Nonresident Portfolio Flows:",
+                                "Select Date Range:",
                                 start=all_df[11]["Date"].min(),
                                 end=all_df[11]["Date"].max(),
                             ),
@@ -292,7 +292,7 @@ app_ui = ui.page_fluid(
 
 
 def server(input, output, session):
-    def styled_table_func(n):        
+    def styled_table_func(n:int) -> ui.HTML:        
         rate_diff_df, years = rate_diff_func(n)
         table_html = f"""
         <table class='table table-bordered table-striped'>
@@ -327,7 +327,7 @@ def server(input, output, session):
     def styled_table3():
         return styled_table_func(10)
 
-    def parent_filtered_df(df, input_date_range):
+    def parent_filtered_df(df: pd.DataFrame, input_date_range) -> pd.DataFrame:
         start_date, end_date = input_date_range
         start_date = pd.Timestamp(start_date)
         end_date = pd.Timestamp(end_date)
@@ -516,14 +516,13 @@ def server(input, output, session):
     @render_plotly
     def hist9():
         capital_flows = filltered_cf()
-        capital_flows.melt(id_vars="Date", var_name="Portfolio", value_name="Value")
-        capital_flows = capital_flows[capital_flows["Date"].isin(input.year_cf())]
-        fig = px.histogram(
+        capital_flows = capital_flows.melt(id_vars="Date", var_name="Portfolio", value_name="Value")
+        fig = px.bar( #or px.histogram
             capital_flows,
             x="Date",
             y="Value",
             color="Portfolio",
-            barmode="group",
+            # barmode="group",
             # orientation="h",
             title="Nonresident Portfolio Flows",
         )

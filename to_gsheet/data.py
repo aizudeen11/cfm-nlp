@@ -14,7 +14,12 @@ class Data:
     def __init__(self):
         pass
 
-    def gdp_growth(self):
+    def gdp_growth(self) -> pd.DataFrame:
+        """     
+        This function processes GDP growth data from an Excel file and returns a DataFrame with the growth rates for various regions and countries.   
+        Returns:
+            pd.DataFrame: A DataFrame containing the GDP growth rates for different regions and countries.
+        """
         def convert_date_to_quarter(date_str, dtq=True):
             if not dtq:
                 year = date_str[:4]
@@ -157,7 +162,7 @@ class Data:
         )
         return gdp_growth
 
-    def vix_history(self):
+    def vix_history(self) -> pd.DataFrame:
         df = pd.read_excel(
             r"C:\Users\AhmadAizudeen\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Desktop\NLP Project\download zip\VIX_History.xlsx",
             sheet_name=1,
@@ -168,7 +173,7 @@ class Data:
         df = df[["Date", "CLOSE"]]  # .iloc#[::-1]#[360:]
         return df
 
-    def policy_rate(self):
+    def policy_rate(self) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         df = pd.read_excel(
             r"C:\Users\AhmadAizudeen\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Roger and Aizudeen\SEACEN CFM Data.xlsx",
             sheet_name=5,
@@ -191,7 +196,7 @@ class Data:
         df3["Date"] = pd.to_datetime(df3["Date"]) + pd.offsets.MonthEnd(0)
         return df, df2, df3
 
-    def monthly_inflation(self):
+    def monthly_inflation(self) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         df = pd.read_excel(
             r"C:\Users\AhmadAizudeen\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Capital Flow Monitor\SEACEN CFM January 2025\edited files\Data\Growth and Inflation 3Q2024.xlsx",
             sheet_name=3,
@@ -212,7 +217,7 @@ class Data:
         )
         return df, df2, df3
 
-    def forex_exchange(self):
+    def forex_exchange(self) -> pd.DataFrame:
         df1 = pd.read_excel(
             r"C:\Users\AhmadAizudeen\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Capital Flow Monitor\SEACEN CFM January 2025\edited files\Data\Section 1 Charts.xlsx",
             sheet_name=3,
@@ -281,7 +286,7 @@ class Data:
         df = df.sort_values(by=["Region", "Year"], ascending=False)
         return df
 
-    def cds(self):
+    def cds(self) -> pd.DataFrame:
         df = pd.read_excel(
             r"C:\Users\AhmadAizudeen\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Capital Flow Monitor\SEACEN CFM January 2025\edited files\Data\Section 1 Charts.xlsx",
             sheet_name=5,
@@ -303,14 +308,14 @@ class Data:
         df2 = df2.fillna("")
         return df2
 
-    def liquidity(self):
+    def liquidity(self) -> pd.DataFrame:
         df = pd.read_excel(
             r"C:\Users\AhmadAizudeen\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Desktop\NLP Project\download zip\BIS Liquidity data.xlsx"
         )
         df = df[["TIME_PERIOD", "OBS_VALUE"]]
         return df
     
-    def financial_stress_index(self):
+    def financial_stress_index(self) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         yield_data1 = pd.read_excel(r"C:\Users\AhmadAizudeen\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Roger and Aizudeen\00 dlx.xlsx", header=1)
         yield_data1 = yield_data1[[*yield_data1.columns[[0,1,3]]]]
         yield_data1.drop([0,1,2], inplace=True)
@@ -533,7 +538,7 @@ class Data:
 
         return yield_data_calc, stock_data_calc2, empi, financial_sector_beta, garch, fsi
 
-    def sovereign_bond_yields(self):
+    def sovereign_bond_yields(self) -> pd.DataFrame:
         df1 = pd.read_excel(
             r"C:\Users\AhmadAizudeen\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Capital Flow Monitor\SEACEN CFM January 2025\edited files\Data\Section 1 Charts.xlsx",
             sheet_name='Yields YTD',
@@ -606,7 +611,7 @@ class Data:
         df = df.sort_values(by=["Region", "Year"], ascending=False)
         return df 
 
-    def stock_price_index(self):
+    def stock_price_index(self) -> pd.DataFrame:
         df = pd.read_excel(r"C:\Users\AhmadAizudeen\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Capital Flow Monitor\SEACEN CFM January 2025\edited files\Data\Section 1 Charts.xlsx",
             sheet_name='stock indices',
             header=2)
@@ -670,7 +675,7 @@ class Data:
         df3 = df3.sort_values(by=["Region", "Year"], ascending=False)
         return df3
     
-    def capital_flows(self):
+    def capital_flows(self) -> pd.DataFrame:
         file_url = 'https://www.iif.com/Portals/0/Files/Databases/monthly_em_portfolio_flows_database.xlsx?ver=2025-03-13-063222-833'
         response = requests.get(file_url)
 
@@ -703,7 +708,8 @@ class Data:
         df_cf.reset_index(inplace=True)
         return df_cf
 
-    def all_df(self):
+    def all_df(self) -> dict[str, pd.DataFrame]:
+        """Get all dataframes as a dictionary."""
         vix = self.vix_history()
         policy_rate1, policy_rate2, policy_rate3 = self.policy_rate()
         monthly_inflation1, monthly_inflation2, monthly_inflation3 = (
