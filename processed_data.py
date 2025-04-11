@@ -30,6 +30,7 @@ def dfs():
     sovereign_bond_yields = pd.read_excel(path1, sheet_name="sovereign_bond_yields")
     sovereign_bond_yields = sovereign_bond_yields.astype({'Year': 'object', 'Region': 'object'})
     fsi = pd.read_excel(path2, sheet_name="fsi")
+    capital_flows = pd.read_excel(path1, sheet_name="capital_flows")
     t2 = time.perf_counter()
     policy_rate2 = policy_rate1[
         policy_rate1["Region"].isin(
@@ -64,7 +65,8 @@ def dfs():
         gdp_growth,
         fsi,
         stock_price_index,
-        sovereign_bond_yields
+        sovereign_bond_yields,
+        capital_flows
     )
 
 @timed_lru_cache(seconds=None, maxsize=None)
@@ -86,6 +88,7 @@ def dfs1():
     sovereign_bond_yields = pd.read_excel(BytesIO(response.content), sheet_name="sovereign_bond_yields")
     sovereign_bond_yields = sovereign_bond_yields.astype({'Year': 'object', 'Region': 'object'})
     fsi = pd.read_excel(BytesIO(response2.content), sheet_name="fsi")
+    capital_flows = pd.read_excel(BytesIO(response.content), sheet_name="capital_flows")
     t2 = time.perf_counter()
     policy_rate2 = policy_rate1[
         policy_rate1["Region"].isin(
@@ -120,7 +123,8 @@ def dfs1():
         gdp_growth,
         fsi,
         stock_price_index,
-        sovereign_bond_yields
+        sovereign_bond_yields,
+        capital_flows
     )
 
 # @timed_lru_cache(seconds=None, maxsize=None)

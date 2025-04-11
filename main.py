@@ -31,6 +31,7 @@ def rate_diff_func(n):
         rate_df = rate_df.iloc[::-1]
         rate_df['diff'] = rate_df['diff'].round(2)
         return rate_df, years
+    return rate_diff()
 
 app_ui = ui.page_fluid(
     ui.navset_tab(
@@ -258,6 +259,28 @@ app_ui = ui.page_fluid(
                         ),
                         full_screen=True,
                     ),
+                    ui.card(
+                        ui.card_header("Nonresident Portfolio Flows"),
+                        ui.layout_columns(
+                            ui.input_date_range(
+                                "date_range5",
+                                "Select Date Range - Nonresident Portfolio Flows:",
+                                start=all_df[11]["Date"].min(),
+                                end=all_df[11]["Date"].max(),
+                            ),
+                            output_widget("hist11"),
+                            col_widths={"sm": (12)},
+                            row_heights=["auto", 1],
+                        ),
+                        ui.card_footer(
+                            """
+                                Notes: The sample for nonresident portfolio equity flows includes China, India, Indonesia, Korea, Malaysia, Mongolia, the Philippines, Sri Lanka, 
+                                Chinese Taipei, Thailand, and Vietnam. The sample for nonresident portfolio debt flows includes China, India, Indonesia, Korea, Malaysia, Mongolia, 
+                                the Philippines, and Thailand.
+                            """
+                        ),
+                        full_screen=True,
+                    ),
                     fill=False,
                     col_widths={"sm": (6, 6)},
                 ),
@@ -330,6 +353,10 @@ def server(input, output, session):
     )
     filltered_fsi = reactive.Calc(
         lambda: parent_filtered_df(all_df[8], input.date_range4())
+    )
+
+    filltered_cf = reactive.Calc(
+        lambda: parent_filtered_df(all_df[11], input.date_range5())
     )
 
     @render_plotly
@@ -486,5 +513,20 @@ def server(input, output, session):
         
         return fig
     
+    @render_plotly
+    def hist9():
+        capital_flows = filltered_cf()
+        capital_flows.melt(id_vars="Date", var_name="Portfolio", value_name="Value")
+        capital_flows = capital_flows[capital_flows["Date"].isin(input.year_cf())]
+        fig = px.histogram(
+            capital_flows,
+            x="Date",
+            y="Value",
+            color="Portfolio",
+            barmode="group",
+            # orientation="h",
+            title="Nonresident Portfolio Flows",
+        )
+        return fig
 
 app = App(app_ui, server)

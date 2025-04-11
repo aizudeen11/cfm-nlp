@@ -4,6 +4,8 @@ import datetime
 import numpy as np
 import warnings
 from arch import arch_model
+import requests
+from io import BytesIO
 warnings.filterwarnings("ignore")
 # use min max()
 
@@ -668,6 +670,39 @@ class Data:
         df3 = df3.sort_values(by=["Region", "Year"], ascending=False)
         return df3
     
+    def capital_flows(self):
+        file_url = 'https://www.iif.com/Portals/0/Files/Databases/monthly_em_portfolio_flows_database.xlsx?ver=2025-03-13-063222-833'
+        response = requests.get(file_url)
+
+        if response.headers.get('Content-Type') == 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':
+            excel_data = BytesIO(response.content)
+            df = pd.read_excel(excel_data, sheet_name='Country Flows_nw', header=3)
+        else:
+            print("Failed to download a valid Excel file. The URL might not be a direct link.")
+        
+        equity = df[df.columns[[0,1,3,5,7,9,11,13,14,16,45,60]]]
+        equity.rename(columns={'Unnamed: 0': 'Date'}, inplace=True)
+        equity['Date'].fillna(0, inplace=True)
+        date_new = [x for x in equity['Date'] if isinstance(x, datetime.date)]
+        equity = equity[equity['Date'].isin(date_new)]
+
+        debt = df[df.columns[[0,2,4,6,8,10,12,15,61]]]
+        debt.rename(columns={'Unnamed: 0': 'Date'}, inplace=True)
+        debt['Date'].fillna(0, inplace=True)
+        date_new = [x for x in debt['Date'] if isinstance(x, datetime.date)]
+        debt = debt[debt['Date'].isin(date_new)]
+        debt.rename(columns={k:v for (k,v) in zip(debt.columns, equity.columns.drop(['Taiwan, China', 'Vietnam', 'Sri lanka']))}, inplace=True)
+
+        equity.set_index('Date', inplace=True)
+        debt.set_index('Date', inplace=True)
+
+        df_cf = pd.DataFrame(index=debt.index)
+
+        df_cf['Portfolio Debt'] = debt.sum(axis=1)
+        df_cf['Portfolio Equity'] = equity.sum(axis=1)
+        df_cf.reset_index(inplace=True)
+        return df_cf
+
     def all_df(self):
         vix = self.vix_history()
         policy_rate1, policy_rate2, policy_rate3 = self.policy_rate()
