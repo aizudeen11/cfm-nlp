@@ -16,7 +16,7 @@ print(path2)
 
 # vix, policy_rate1, policy_rate2, policy_rate3, fx, cds, liquidity, gdp_growth
 @timed_lru_cache(seconds=None, maxsize=None)
-def dfs():
+def dfs() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     t1 = time.perf_counter()
     vix_data = pd.read_excel(path1, sheet_name="vix_data")
     policy_rate1 = pd.read_excel(path1, sheet_name="policy_rate1")
@@ -70,7 +70,7 @@ def dfs():
     )
 
 @timed_lru_cache(seconds=None, maxsize=None)
-def dfs1():
+def dfs1() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     t1 = time.perf_counter()
     url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS5DDYL_MTv8b1AsgYvUEDuxiIFq81-CR9Yccc4sL1pvv1wD2GyHNabQQiixJsRpwaxG59Qyg-Asr11/pub?output=xlsx"
     url2 = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSRMFoOOi8AXat4kH62KTNp56FbRc7XN9sSioYbfzOzPU0TDYWqkNqxhu8rWtnUy6erG9WVp9noknFp/pub?output=xlsx'

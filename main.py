@@ -268,7 +268,7 @@ app_ui = ui.page_fluid(
                                 start=all_df[11]["Date"].min(),
                                 end=all_df[11]["Date"].max(),
                             ),
-                            output_widget("hist11"),
+                            output_widget("hist9"),
                             col_widths={"sm": (12)},
                             row_heights=["auto", 1],
                         ),
@@ -522,7 +522,7 @@ def server(input, output, session):
             x="Date",
             y="Value",
             color="Portfolio",
-            # barmode="group",
+            barmode="group",
             # orientation="h",
             title="Nonresident Portfolio Flows",
         )

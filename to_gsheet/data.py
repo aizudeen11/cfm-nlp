@@ -703,8 +703,8 @@ class Data:
 
         df_cf = pd.DataFrame(index=debt.index)
 
-        df_cf['Portfolio Debt'] = debt.sum(axis=1)
-        df_cf['Portfolio Equity'] = equity.sum(axis=1)
+        df_cf['Portfolio Debt'] = debt.sum(axis=1)/1000
+        df_cf['Portfolio Equity'] = equity.sum(axis=1)/1000
         df_cf.reset_index(inplace=True)
         return df_cf
 
