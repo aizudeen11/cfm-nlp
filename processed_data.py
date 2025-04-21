@@ -18,7 +18,7 @@ print(path)
 
 
 @timed_lru_cache(seconds=None, maxsize=None)
-def dfs2() -> tuple[pd.DataFrame, pd.DataFrame]:
+def dfs2() -> tuple[pd.DataFrame, pd.DataFrame, dict]:
     df_init = pd.read_excel(path4, sheet_name='BoP edit')
     short_title = df_init['short_title'].to_list()
     description = df_init['desc'].to_list()
@@ -33,7 +33,11 @@ def dfs2() -> tuple[pd.DataFrame, pd.DataFrame]:
     sc2_quarter['Type'] = sc2_quarter['Type'].replace(description, short_title)
     sc2_half[sc2_half.columns[2:]] = sc2_half[sc2_half.columns[2:]].apply(lambda x: round(x,2))
     sc2_half['Type'] = sc2_half['Type'].replace(description, short_title)
-    return sc2_half, sc2_quarter
+
+    dict1 = df_init[['group', 'short_title']].groupby("group")["short_title"].apply(list).reset_index().to_dict(orient='list')
+    dict2 = {k: {item: item for item in v} for k, v in zip(dict1['group'], dict1['short_title'])}
+
+    return sc2_half, sc2_quarter, dict2
 
 # vix, policy_rate1, policy_rate2, policy_rate3, fx, cds, liquidity, gdp_growth
 @timed_lru_cache(seconds=None, maxsize=None)

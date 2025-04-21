@@ -32,7 +32,7 @@ app_ui = ui.page_fillable(
         ),
         ui.input_select(
             "country",
-            "Select Region",
+            "Select Region(s)",
             choices=all_df[0]["Region"].unique().tolist(),
             selected=all_df[0]["Region"].unique().tolist(),
             multiple=True,
@@ -40,9 +40,9 @@ app_ui = ui.page_fillable(
         ui.input_select(
             "types",
             "Select Type",
-            choices=all_df[0]["Type"].unique().tolist(),
+            choices=all_df[2],
             selected=all_df[0]["Type"].unique().tolist()[0],
-            multiple=True,
+            # multiple=True,
         ),
         ui.card(ui.output_data_frame("summary_data"), height="400px"),
         # ui.card(output_widget("country_detail_pop"), height="400px"),
@@ -55,7 +55,7 @@ app_ui = ui.page_fillable(
 
 def server(input, output, session):
     def parent_filtered_df(df: pd.DataFrame, input_country, input_types) -> pd.DataFrame:
-        filt_df = df[(df["Type"].isin(input_types)) & (df["Region"].isin(input_country))]
+        filt_df = df[(df["Type"]==input_types) & (df["Region"].isin(input_country))]
 
         return filt_df
 
