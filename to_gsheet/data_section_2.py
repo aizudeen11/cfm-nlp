@@ -1,0 +1,117 @@
+import pandas as pd
+from datetime import datetime
+import os
+
+def main() -> tuple[pd.DataFrame, pd.DataFrame]:
+    df_init = pd.read_excel(r"C:\Users\Admin\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Desktop\Automation.xlsx", sheet_name='BoP edit')
+
+    path_dict = dict()
+    list_1 = ['IMF BOP Annual.xlsx', 'IMF BOP Quarterly.xlsx']
+    # directory_path= r'C:\Users\AhmadAizudeen\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Roger and Aizudeen\Country BoP and IIP Data'
+    directory_path= r'C:\Users\Admin\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Roger and Aizudeen\Country BoP and IIP Data'
+    for filename in os.listdir(directory_path):
+        if filename in ['01 Emerging Market', '02 G7 Countries']:
+            continue
+        file_path = os.path.join(directory_path, filename)
+        list_temp = []
+        for filename2 in os.listdir(file_path):
+            if any(word in str(filename2) for word in list_1):            
+                list_temp.append(filename2)
+                path_dict[filename] = list_temp
+            else:
+                continue
+
+    df_path = []
+    for k, v in path_dict.items():
+        df_path.append(os.path.join(directory_path, k, v[1]))
+        print(v[1]) ## to check the file name
+
+    df_all_annual = pd.DataFrame()
+    for x, y in enumerate(df_path):
+        df = pd.read_excel(y)
+        df = df[df[df.columns[0]].isin(df_init['desc'])]
+        df_all_annual = pd.concat([df_all_annual, df]) 
+
+    df_all_annual.rename(columns={df_all_annual.columns[0]: 'Type'}, inplace=True)
+
+    df_all_annual_2 = df_all_annual[df_all_annual.columns[:4].to_list() + [dt for dt in df_all_annual.columns[4:].sort_values(ascending=True).to_list() if dt >= datetime(2019, 1, 1)]]
+
+    def sg_row(df:pd.DataFrame, main:bool = True) -> pd.DataFrame:
+        var = df.columns[:4] if main else df.columns[4:]
+        return df[var]
+
+    sg_add = {
+    'FDI Assets':{'FDI Equity Assets': 0.74,'FDI Debt Assets': 0.26},
+    'FDI Liabilities': {'FDI Equity Liabilities': 0.85,'FDI Debt Liabilities': 0.15},
+    'Portfolio Assets': {'Portfolio Equity Assets': 0.57, 'Portfolio Debt Assets': 0.43}, 
+    'Portfolio Liabilities': {'Portfolio Equity Liabilities': 0.67, 'Portfolio Debt Liabilities': 0.33},
+    'Other Investment Assets': {'Currency and Deposits Assets': 0.5, 'Loans Assets': 0.29, 'Insurance and Pension Assets': 0.02, 'Trade Credits and Advances Assets': 0.09, 'OI Others Assets': 0.1},
+    'Other Investment Liabilities': {'Currency and Deposits Liabilities': 0.5, 'Loans Liabilities': 0.29, 'Insurance and Pension Liabilities': 0.02, 'Trade Credits and Advances Liabilities': 0.09, 'OI Others Liabilities': 0.1},
+    }
+
+    m = df_all_annual_2[(df_all_annual_2['Region']== 'Singapore')]['Type'].to_list()
+    df_init[(df_init['desc'].isin(m))]['group'].unique().tolist()
+
+    sg_item = [ 'BoP: Financial Account: Direct Investment: Assets',
+                'BoP: Financial Account: Direct Investment: Liabilities',
+                'BoP: Financial Account: Portfolio Investment: Assets',
+                'BoP: Financial Account: Portfolio Investment: Liabilities',
+                'BoP: Financial Account: Other Investment: Assets',
+                'BoP: Financial Account: Other Investment: Liabilities']
+
+    sg_df = pd.DataFrame(columns=df_all_annual_2.columns)
+
+    # ensure the zip between sg_item and sg_add is correct
+    for x, y in zip(sg_item, sg_add.values()):
+        multiplier = list(y.values())
+        row_type = list(y.keys())
+        df_temp = df_all_annual_2[(df_all_annual_2['Type'] == x) &(df_all_annual_2['Region']== 'Singapore')]
+        # print(multiplier, row_type)
+        for n in range(len(row_type)):
+            col1 = sg_row(df_temp, main=True)
+            col1.iat[0, 0] = list(df_init[(df_init['short_title']==row_type[n])]['desc'])[0]
+            col2 = sg_row(df_temp, main=False) * multiplier[n]
+            merged = pd.concat([col1, col2], axis=1)
+            sg_df = pd.concat([sg_df, merged], axis=0)
+
+    df_init_tw = pd.read_excel(r"C:\Users\Admin\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Desktop\Automation.xlsx", sheet_name='Taiwan BoP')
+    df_tw = pd.read_excel(r"C:\Users\Admin\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Roger and Aizudeen\Country BoP and IIP Data\Chinese Taipei (Taiwan) (TW)\TW CB BOP Quarterly.xlsx")
+    df_tw.rename(columns={df_tw.columns[0]: 'Type'}, inplace=True)
+    df_tw = df_tw[df_tw['Type'].isin(df_init_tw['desc'])]
+
+    for x, y in enumerate(df_tw['Type'].to_list()):
+        df_tw.iat[x,0] = list(df_init_tw[(df_init_tw['desc'] == y)]['desc2'])[0]
+
+    selected_columns = [col for col in df_tw.columns[4:] if pd.to_datetime(col) >= datetime(2019, 1, 1)]
+    final_columns = list(df_tw.columns[:4]) + selected_columns
+    df_tw = df_tw[final_columns]
+
+    # concat to the main df
+    df_all_annual_2 = pd.concat([df_all_annual_2, sg_df, df_tw], axis=0)
+
+    init_dict = df_init.to_dict()
+    df_dict = dict()
+    for x in init_dict['desc'].values():
+        df_temp = df_all_annual_2[(df_all_annual_2[df_all_annual_2.columns[0]] == x)].reset_index(drop=True)
+        df_dict[x] = df_temp
+
+    # calculate the sum of the columns (1H and 2H) for each year
+    num1, num2 = 0, 1
+    df_col = df_all_annual_2.columns[4:][:-1]
+    df_temp_col_1 = df_all_annual_2[df_all_annual_2.columns[:4]].reset_index(drop=True)
+
+    for x in range(len(df_col)//2):
+        df_col_temp = (df_all_annual_2[df_col[num1]] + df_all_annual_2[df_col[num1 + 1]]).div(1000)
+        year = df_col[num1].year
+        df_col_temp.reset_index(drop=True, inplace=True)
+        df_temp_col_1[f'{num2}H{year}'] = df_col_temp
+        num1 += 2
+        num2 += 1
+        if num2 == 3:
+            num2 = 1
+
+    df_temp_col_1.drop(columns=['Last Update Time', 'Unit'], inplace=True)
+
+    # df_all_annual_2[df_all_annual_2.columns[:8]]
+
+    return df_temp_col_1, df_all_annual_2

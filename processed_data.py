@@ -11,8 +11,29 @@ from pathlib import Path
 path = Path(__file__).parent
 path1 = path / "test.xlsx"
 path2 = path / "financial stress index.xlsx"
-print(path2)
+path3 = path / "section 2.xlsx"
+path4 = path / "Automation.xlsx"
 
+print(path)
+
+
+@timed_lru_cache(seconds=None, maxsize=None)
+def dfs2() -> tuple[pd.DataFrame, pd.DataFrame]:
+    df_init = pd.read_excel(path4, sheet_name='BoP edit')
+    short_title = df_init['short_title'].to_list()
+    description = df_init['desc'].to_list()
+    sc2_half = pd.read_excel(path3, sheet_name="sc2_half")
+    sc2_quarter = pd.read_excel(path3, sheet_name="sc2_quarter")
+    date_temp = sc2_quarter.columns[4:].to_list()
+    date_temp2 = [dt.strftime("%Y-%m") for dt in date_temp]
+    rename_date = {k: v for k, v in zip(date_temp, date_temp2)}
+    sc2_quarter.rename(columns=rename_date, inplace=True)
+    sc2_quarter[list(rename_date.values())] = sc2_quarter[list(rename_date.values())].apply(lambda x: round(x, 2))
+    sc2_quarter['Last Update Time'] = pd.to_datetime(sc2_quarter['Last Update Time']).dt.strftime("%Y-%m-%d")
+    sc2_quarter['Type'] = sc2_quarter['Type'].replace(description, short_title)
+    sc2_half[sc2_half.columns[2:]] = sc2_half[sc2_half.columns[2:]].apply(lambda x: round(x,2))
+    sc2_half['Type'] = sc2_half['Type'].replace(description, short_title)
+    return sc2_half, sc2_quarter
 
 # vix, policy_rate1, policy_rate2, policy_rate3, fx, cds, liquidity, gdp_growth
 @timed_lru_cache(seconds=None, maxsize=None)

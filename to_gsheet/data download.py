@@ -6,6 +6,7 @@ import pandas as pd
 from gspread_dataframe import set_with_dataframe
 
 from data import Data
+from data_section_2 import main
 from cache_pandas import timed_lru_cache
 import logging
 
@@ -42,14 +43,23 @@ def dataF():
         capital_flows, #use this
     )
 
+@timed_lru_cache(seconds=None, maxsize=None)
+def dataF2():
+    df1, df2 = main()
+    return df1, df2
 
 # vix_data, policy_rate1, policy_rate2, policy_rate3, fx, cds, liquidity, gdp_growth, yield_data_calc, stock_data_calc2, empi, financial_sector_beta, garch, fsi, stock_price_index, sovereign_bond_yields, capital_flows = dataF()
+sc2_half, sc2_quarter = dataF2()
 
 id_test = '11Ora6_5EoQJdgnUpjjZgFZyrILguo1c32mde_uQwupw'
 id_fsi = '1IK1wbkFNaRH9vFwXfhBYh_RSK-UXKbaGzbCoAQWWRjY'
+id_sc2 = '1hKGm154j2OEaGZ3Gi7Qr7uADKupNP_raQ0vV70OlTkk'
+
 # ws1 = {'vix_data': vix_data, 'policy_rate1': policy_rate1, 'fx': fx, 'cds': cds, 'liquidity': liquidity, 'gdp_growth': gdp_growth, 'stock_price_index': stock_price_index
 #        , 'sovereign_bond_yields': sovereign_bond_yields, 'capital_flows': capital_flows}
 # ws2 = {'yield_data_calc': yield_data_calc, 'stock_data_calc2': stock_data_calc2, 'empi': empi, 'financial_sector_beta': financial_sector_beta, 'garch': garch, 'fsi': fsi}
+
+ws3 = {'sc2_half': sc2_half, 'sc2_quarter': sc2_quarter}
 
 # for x in ws2:
 #     ws2[x] = ws2[x].reset_index()
@@ -81,11 +91,12 @@ def process(id, ws):
 
 # process(id_test, ws1) # uncomment if need to update test sheet
 # process(id_fsi, ws2) # uncomment if need to update fsi sheet
+process(id_sc2, ws3)
 
-df = Data()
-capital_flows = df.capital_flows()
-ws_temp = {'capital_flows': capital_flows}
-process(id_test, ws_temp)
+# df = Data()
+# capital_flows = df.capital_flows()
+# ws_temp = {'capital_flows': capital_flows}
+# process(id_test, ws_temp)
 # print(capital_flows)
 
 # sheet.worksheet(new_worksheet_name) -- to select worksheet page
