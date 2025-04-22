@@ -3,12 +3,12 @@ from datetime import datetime
 import os
 
 def main() -> tuple[pd.DataFrame, pd.DataFrame]:
-    df_init = pd.read_excel(r"C:\Users\Admin\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Desktop\Automation.xlsx", sheet_name='BoP edit')
+    df_init = pd.read_excel(r"C:\Users\AhmadAizudeen\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Desktop\Automation.xlsx", sheet_name='BoP edit')
 
     path_dict = dict()
     list_1 = ['IMF BOP Annual.xlsx', 'IMF BOP Quarterly.xlsx']
     # directory_path= r'C:\Users\AhmadAizudeen\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Roger and Aizudeen\Country BoP and IIP Data'
-    directory_path= r'C:\Users\Admin\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Roger and Aizudeen\Country BoP and IIP Data'
+    directory_path= r'C:\Users\AhmadAizudeen\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Roger and Aizudeen\Country BoP and IIP Data'
     for filename in os.listdir(directory_path):
         if filename in ['01 Emerging Market', '02 G7 Countries']:
             continue
@@ -74,8 +74,8 @@ def main() -> tuple[pd.DataFrame, pd.DataFrame]:
             merged = pd.concat([col1, col2], axis=1)
             sg_df = pd.concat([sg_df, merged], axis=0)
 
-    df_init_tw = pd.read_excel(r"C:\Users\Admin\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Desktop\Automation.xlsx", sheet_name='Taiwan BoP')
-    df_tw = pd.read_excel(r"C:\Users\Admin\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Roger and Aizudeen\Country BoP and IIP Data\Chinese Taipei (Taiwan) (TW)\TW CB BOP Quarterly.xlsx")
+    df_init_tw = pd.read_excel(r"C:\Users\AhmadAizudeen\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Desktop\Automation.xlsx", sheet_name='Taiwan BoP')
+    df_tw = pd.read_excel(r"C:\Users\AhmadAizudeen\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Roger and Aizudeen\Country BoP and IIP Data\Chinese Taipei (Taiwan) (TW)\TW CB BOP Quarterly.xlsx")
     df_tw.rename(columns={df_tw.columns[0]: 'Type'}, inplace=True)
     df_tw = df_tw[df_tw['Type'].isin(df_init_tw['desc'])]
 
@@ -88,6 +88,20 @@ def main() -> tuple[pd.DataFrame, pd.DataFrame]:
 
     # concat to the main df
     df_all_annual_2 = pd.concat([df_all_annual_2, sg_df, df_tw], axis=0)
+
+    seacen_country = ['Papua New Guinea', 'Vietnam', 'Nepal', 'India', 'Indonesia', 'Laos', 'Sri Lanka', 'Hong Kong SAR (China)', 'Philippines', 'Taiwan', 'Malaysia', 'Mongolia', 'China', 'Cambodia', 'Thailand', 'Singapore', 'South Korea', 'Brunei', 'Myanmar']
+
+    for x in df_all_annual_2['Type'].values:
+        var1 = list(set(df_all_annual_2[(df_all_annual_2['Type'] == x)]['Region'].values).symmetric_difference(set(seacen_country)))
+        if len(var1) > 0:
+            for y in var1:
+                df_temp1 = pd.DataFrame({"Type": [x], "Region": [y]})
+                df_all_annual_2 = pd.concat([df_all_annual_2, df_temp1], axis=0)
+        else:
+            continue
+
+    df_all_annual_2.sort_values(by=['Type', 'Region'], inplace=True)
+    df_all_annual_2.reset_index(drop=True, inplace=True)
 
     init_dict = df_init.to_dict()
     df_dict = dict()

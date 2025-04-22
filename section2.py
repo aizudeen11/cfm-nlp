@@ -15,20 +15,38 @@ import warnings
 warnings.filterwarnings("ignore")
 
 all_df = dfs2()
-
+years = sorted(set([str(x)[:4] for x in all_df[1].columns[4:].to_list()]))
+print(years)
 
 app_ui = ui.page_fillable(
     {"class": "p-3"},
     ui.markdown(
-        "**Instructions**: Select one or more countries in the table below to see more information."
+        "**Instructions**: to **Select Year(s)** and **Select Region(s)**, hold down the Ctrl (windows) or Command (Mac) button to select multiple options."
     ),
     ui.layout_columns(
-        ui.input_radio_buttons(
-            "sc2_df",
-            "Select DataFrame",
-            choices=["sc2_half", "sc2_quarter"],
-            selected="sc2_half",
-            inline=True,
+        ui.div(
+            ui.input_radio_buttons(
+                "sc2_df",
+                "Select DataFrame",
+                choices=["sc2_half", "sc2_quarter"],
+                selected="sc2_half",
+                inline=True,
+            ),
+            ui.input_radio_buttons(
+                "view_type",
+                "Select View Type",
+                choices=["DataFrame", "Figure"],
+                selected="DataFrame",
+                inline=True,
+            ),
+        class_ = 'hh'
+        ),
+        ui.input_select(
+            "years",
+            "Select Year(s)",
+            choices=sorted(years, reverse=True),
+            selected=years[-4:],
+            multiple=True,
         ),
         ui.input_select(
             "country",
@@ -47,23 +65,25 @@ app_ui = ui.page_fillable(
         ui.card(ui.output_data_frame("summary_data"), height="400px"),
         # ui.card(output_widget("country_detail_pop"), height="400px"),
         # ui.card(output_widget("country_detail_percap"), height="400px"),
-        col_widths=[4,4,4, 12],
+        col_widths=[3,3,3,3, 12],
         row_heights=["auto", 1],
     ),
 )
 
 
 def server(input, output, session):
-    def parent_filtered_df(df: pd.DataFrame, input_country, input_types) -> pd.DataFrame:
+    def parent_filtered_df(df: pd.DataFrame, input_country, input_types, input_year, df_int) -> pd.DataFrame:
         filt_df = df[(df["Type"]==input_types) & (df["Region"].isin(input_country))]
-
+        selected_years = [x for x in filt_df.columns.to_list() if any(m in x for m in input_year)]
+        selected_col = list(filt_df.columns[0:df_int]) + selected_years
+        filt_df = filt_df[selected_col]
         return filt_df
 
     filltered_df1 = reactive.Calc(
-        lambda: parent_filtered_df(all_df[0], input.country(), input.types())
+        lambda: parent_filtered_df(all_df[0], input.country(), input.types(), input.years(), 2)
     )
     filltered_df2 = reactive.Calc(
-        lambda: parent_filtered_df(all_df[1], input.country(), input.types())
+        lambda: parent_filtered_df(all_df[1], input.country(), input.types(), input.years(), 4)
     )
 
     @render.data_frame
