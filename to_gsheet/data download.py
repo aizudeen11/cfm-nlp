@@ -45,11 +45,11 @@ def dataF():
 
 @timed_lru_cache(seconds=None, maxsize=None)
 def dataF2():
-    df1, df2 = main()
-    return df1, df2
+    df1, df2, df3 = main()
+    return df1, df2, df3
 
 # vix_data, policy_rate1, policy_rate2, policy_rate3, fx, cds, liquidity, gdp_growth, yield_data_calc, stock_data_calc2, empi, financial_sector_beta, garch, fsi, stock_price_index, sovereign_bond_yields, capital_flows = dataF()
-sc2_half, sc2_quarter = dataF2()
+sc2_half, sc2_quarter, df_main = dataF2()
 
 id_test = '11Ora6_5EoQJdgnUpjjZgFZyrILguo1c32mde_uQwupw'
 id_fsi = '1IK1wbkFNaRH9vFwXfhBYh_RSK-UXKbaGzbCoAQWWRjY'
@@ -59,7 +59,7 @@ id_sc2 = '1hKGm154j2OEaGZ3Gi7Qr7uADKupNP_raQ0vV70OlTkk'
 #        , 'sovereign_bond_yields': sovereign_bond_yields, 'capital_flows': capital_flows}
 # ws2 = {'yield_data_calc': yield_data_calc, 'stock_data_calc2': stock_data_calc2, 'empi': empi, 'financial_sector_beta': financial_sector_beta, 'garch': garch, 'fsi': fsi}
 
-ws3 = {'sc2_half': sc2_half, 'sc2_quarter': sc2_quarter}
+ws3 = {'sc2_half': sc2_half, 'sc2_quarter': sc2_quarter, 'df_main': df_main}
 
 # for x in ws2:
 #     ws2[x] = ws2[x].reset_index()

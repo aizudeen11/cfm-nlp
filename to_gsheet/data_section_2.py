@@ -3,12 +3,12 @@ from datetime import datetime
 import os
 
 def main() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
-    df_init = pd.read_excel(r"C:\Users\AhmadAizudeen\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Desktop\Automation.xlsx", sheet_name='BoP edit')
+    df_init = pd.read_excel(r"C:\Users\Admin\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Desktop\Automation.xlsx", sheet_name='BoP edit')
 
     path_dict = dict()
     list_1 = ['IMF BOP Annual.xlsx', 'IMF BOP Quarterly.xlsx']
-    # directory_path= r'C:\Users\AhmadAizudeen\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Roger and Aizudeen\Country BoP and IIP Data'
-    directory_path= r'C:\Users\AhmadAizudeen\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Roger and Aizudeen\Country BoP and IIP Data'
+    # directory_path= r'C:\Users\Admin\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Roger and Aizudeen\Country BoP and IIP Data'
+    directory_path= r'C:\Users\Admin\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Roger and Aizudeen\Country BoP and IIP Data'
     for filename in os.listdir(directory_path):
         if filename in ['01 Emerging Market', '02 G7 Countries']:
             continue
@@ -74,8 +74,8 @@ def main() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
             merged = pd.concat([col1, col2], axis=1)
             sg_df = pd.concat([sg_df, merged], axis=0)
 
-    df_init_tw = pd.read_excel(r"C:\Users\AhmadAizudeen\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Desktop\Automation.xlsx", sheet_name='Taiwan BoP')
-    df_tw = pd.read_excel(r"C:\Users\AhmadAizudeen\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Roger and Aizudeen\Country BoP and IIP Data\Chinese Taipei (Taiwan) (TW)\TW CB BOP Quarterly.xlsx")
+    df_init_tw = pd.read_excel(r"C:\Users\Admin\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Desktop\Automation.xlsx", sheet_name='Taiwan BoP')
+    df_tw = pd.read_excel(r"C:\Users\Admin\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Roger and Aizudeen\Country BoP and IIP Data\Chinese Taipei (Taiwan) (TW)\TW CB BOP Quarterly.xlsx")
     df_tw.rename(columns={df_tw.columns[0]: 'Type'}, inplace=True)
     df_tw = df_tw[df_tw['Type'].isin(df_init_tw['desc'])]
 
@@ -159,7 +159,7 @@ def main() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
 
 
     df_by_region_main.reset_index(inplace = True, drop=True)
-    df_by_region_main.insert(loc=0, column='Group', value='Asset')
+    df_by_region_main.insert(loc=0, column='Group', value='Assets')
 
     ###################### this is for equity ######################
 
@@ -187,7 +187,7 @@ def main() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         df_by_region_main2 = pd.concat([df_by_region_main2, df_by_region_temp], axis = 0)  
 
     df_by_region_main2.reset_index(inplace = True, drop=True)
-    df_by_region_main2.insert(loc=0, column='Group', value='Debt')
+    df_by_region_main2.insert(loc=0, column='Group', value='Liabilities')
 
     ###################### this is for debt ######################
 
