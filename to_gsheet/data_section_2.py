@@ -2,7 +2,7 @@ import pandas as pd
 from datetime import datetime
 import os
 
-def main() -> tuple[pd.DataFrame, pd.DataFrame]:
+def main() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     df_init = pd.read_excel(r"C:\Users\AhmadAizudeen\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Desktop\Automation.xlsx", sheet_name='BoP edit')
 
     path_dict = dict()
@@ -126,6 +126,88 @@ def main() -> tuple[pd.DataFrame, pd.DataFrame]:
 
     df_temp_col_1.drop(columns=['Last Update Time', 'Unit'], inplace=True)
 
-    # df_all_annual_2[df_all_annual_2.columns[:8]]
+    calc_dict = {'Asia-Pacific': seacen_country,
+             'Asian Advance Economies': ['Hong Kong SAR (China)', 'South Korea', 'Singapore', 'Taiwan'],
+             'ASEAN5 Economies': ['Indonesia', 'Malaysia', 'Philippines', 'Thailand', 'Vietnam'],
+             'Asian EDMEs': ['Brunei', 'Cambodia', 'Laos', 'Mongolia', 'Nepal', 'Sri Lanka', 'Papua New Guinea', 'Myanmar'],
+             'China': ['China'],
+             'India': ['India'],
+             }
 
-    return df_temp_col_1, df_all_annual_2
+    ###################### this is for equity ######################
+
+    asset_row = df_init.iloc[[0,4,5,6, 8, 9,10,11,12,13,14]]['desc'].to_list()
+    asset_row2 = ['Direct Investment', 'Portfolio Equity', 'Portfolio Debt','Financial Derivatives', 'Other Equity','Currency & Deposits','Loans','Insurance, Pension & Standardized Guarantee Schemes'
+                ,'Trade Credit & Advances','Other Accounts Receivable','Reserve Assets', ]
+    sum_rows = df_init[(df_init['short_title'].isin(['OI Equity Assets','Insurance and Pension Assets','OI Others Assets',]))]['desc'].to_list()
+    order = ['Direct Investment','Portfolio Equity','Portfolio Debt','Financial Derivatives','Currency & Deposits','Loans','Trade Credit & Advances','Other Investments','Reserve Assets',]
+    df_by_region_main = pd.DataFrame(columns=df_temp_col_1.columns)
+
+    for x,y in calc_dict.items():
+        # print(x,y)
+        df_by_region_temp = df_temp_col_1[(df_temp_col_1['Region'].isin(y)) & (df_temp_col_1['Type'].isin(asset_row))]
+        df_by_region_temp = df_by_region_temp.groupby(['Type']).sum()
+        df_by_region_temp.loc[str(x) + ' Total'] = df_by_region_temp.sum()
+        df_by_region_temp.loc['Other Investments'] = df_by_region_temp.loc[sum_rows].sum()
+        df_by_region_temp.reset_index(inplace = True)
+        df_by_region_temp = df_by_region_temp[(~df_by_region_temp['Type'].isin(sum_rows))] #####  the symbol of '~' use similar like notin, the oposite of isin. this is build in python operator
+        df_by_region_temp['Type'] = df_by_region_temp['Type'].replace(asset_row, asset_row2)
+        df_by_region_temp = df_by_region_temp.sort_values(by='Type', key=lambda x: x.map({k:i for i, k in enumerate(order)}))
+        df_by_region_temp['Region'] = x
+
+        df_by_region_main = pd.concat([df_by_region_main, df_by_region_temp], axis = 0)  
+
+
+    df_by_region_main.reset_index(inplace = True, drop=True)
+    df_by_region_main.insert(loc=0, column='Group', value='Asset')
+
+    ###################### this is for equity ######################
+
+    ###################### this is for debt ######################
+
+    debt_row = df_init.iloc[[20,24,25,26,28,29,30,31,32,33,34]]['desc'].to_list()
+    debt_row2 = ['Direct Investment', 'Portfolio Equity', 'Portfolio Debt','Financial Derivatives', 'Other Equity','Currency & Deposits','Loans','Insurance, Pension & Standardized Guarantee Schemes'
+                ,'Trade Credit & Advances','Other Accounts Payable','SDR Liabilities', ]
+    sum_rows2 = df_init[(df_init['short_title'].isin(['OI Equity Liabilities', 'Insurance and Pension Liabilities', 'OI Others Liabilities', 'SDR Liabilities']))]['desc'].to_list()
+    order2 = ['Direct Investment','Portfolio Equity','Portfolio Debt','Financial Derivatives','Currency & Deposits','Loans','Trade Credit & Advances','Other Investments']
+    df_by_region_main2 = pd.DataFrame(columns=df_temp_col_1.columns)
+
+    for x,y in calc_dict.items():
+        # print(x,y)
+        df_by_region_temp = df_temp_col_1[(df_temp_col_1['Region'].isin(y)) & (df_temp_col_1['Type'].isin(debt_row))]
+        df_by_region_temp = df_by_region_temp.groupby(['Type']).sum()
+        df_by_region_temp.loc[str(x) + ' Total'] = df_by_region_temp.sum()
+        df_by_region_temp.loc['Other Investments'] = df_by_region_temp.loc[sum_rows2].sum()
+        df_by_region_temp.reset_index(inplace = True)
+        df_by_region_temp = df_by_region_temp[(~df_by_region_temp['Type'].isin(sum_rows2))] #####  the symbol of '~' use similar like notin, the oposite of isin. this is build in python operator
+        df_by_region_temp['Type'] = df_by_region_temp['Type'].replace(debt_row, debt_row2)
+        df_by_region_temp = df_by_region_temp.sort_values(by='Type', key=lambda x: x.map({k:i for i, k in enumerate(order2)}))
+        df_by_region_temp['Region'] = x
+
+        df_by_region_main2 = pd.concat([df_by_region_main2, df_by_region_temp], axis = 0)  
+
+    df_by_region_main2.reset_index(inplace = True, drop=True)
+    df_by_region_main2.insert(loc=0, column='Group', value='Debt')
+
+    ###################### this is for debt ######################
+
+    ###################### this is for caq data ######################
+
+    caq_data = df_temp_col_1[(df_temp_col_1['Type'].isin(df_init[(df_init['group'] == 'Current Account')]['desc'].to_list()[1:]))]
+    caq_data_calc = caq_data.groupby(['Type']).sum()
+    caq_data_calc.loc['Current Account Balance'] = caq_data_calc.sum()
+    caq_data_calc['Region'] = 'Asia-Pacific'
+    caq_data_calc.reset_index(inplace=True)
+    rename_to = ['Goods Trade', 'Services Trade','Primary Income','Secondary Income',]
+    rename_from = ['BoP: Current Account: Goods','BoP: Current Account: Services','BoP: Current Account: Primary Income','BoP: Current Account: Secondary Income',]
+    caq_data_calc['Type'] = caq_data_calc['Type'].replace(rename_from, rename_to)
+    caq_data_calc = caq_data_calc.sort_values(by='Type', key=lambda x: x.map({k:i for i, k in enumerate(rename_to)}))
+    caq_data_calc.reset_index(drop=True, inplace=True)
+    caq_data_calc.insert(loc=0, column='Group', value='Current Account')
+
+    ###################### this is for caq data ######################
+
+    df_main = pd.concat([df_by_region_main, df_by_region_main2, caq_data_calc], axis = 0) ## combine
+    df_main.reset_index(drop=True, inplace=True)
+
+    return df_temp_col_1, df_all_annual_2, df_main
