@@ -124,7 +124,7 @@ def server(input, output, session):
             color="Type",
             # barmode="group",
             # orientation="h",
-            title="Nonresident Portfolio Flows",
+            title="Balance of Payment",
         )
         fig.update_layout(
             legend=dict(
