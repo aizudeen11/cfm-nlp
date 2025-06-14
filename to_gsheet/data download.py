@@ -56,7 +56,7 @@ id_fsi = '1IK1wbkFNaRH9vFwXfhBYh_RSK-UXKbaGzbCoAQWWRjY'
 id_sc2 = '1hKGm154j2OEaGZ3Gi7Qr7uADKupNP_raQ0vV70OlTkk'
 
 # ws1 = {'vix_data': vix_data, 'policy_rate1': policy_rate1, 'fx': fx, 'cds': cds, 'liquidity': liquidity, 'gdp_growth': gdp_growth, 'stock_price_index': stock_price_index
-#        , 'sovereign_bond_yields': sovereign_bond_yields, 'capital_flows': capital_flows}
+    #    , 'sovereign_bond_yields': sovereign_bond_yields, 'capital_flows': capital_flows}
 # ws2 = {'yield_data_calc': yield_data_calc, 'stock_data_calc2': stock_data_calc2, 'empi': empi, 'financial_sector_beta': financial_sector_beta, 'garch': garch, 'fsi': fsi}
 
 ws3 = {'sc2_half': sc2_half, 'sc2_quarter': sc2_quarter, 'df_main': df_main}
