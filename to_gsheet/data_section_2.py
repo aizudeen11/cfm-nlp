@@ -258,6 +258,9 @@ def main2() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     final_columns = list(df_tw.columns[:4]) + selected_columns
     df_tw = df_tw[final_columns]
 
+    # concat to the main df
+    df_all_annual_2 = pd.concat([df_all_annual_2, df_tw], axis=0)
+
     seacen_country = ['Papua New Guinea', 'Vietnam', 'Nepal', 'India', 'Indonesia', 'Laos', 'Sri Lanka', 'Hong Kong SAR (China)', 'Philippines', 'Taiwan', 'Malaysia', 'Mongolia', 'China', 'Cambodia', 'Thailand', 'Singapore', 'South Korea', 'Brunei', 'Myanmar']
 
     for x in df_all_annual_2['Type'].values:
