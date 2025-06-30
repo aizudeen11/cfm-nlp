@@ -54,6 +54,8 @@ app_ui = ui.page_fillable(
             choices=all_df[0]["Region"].unique().tolist(),
             selected=all_df[0]["Region"].unique().tolist(),
             multiple=True,
+            selectize=True,
+            width="100%",
         ),
         ui.input_select(
             "types",
@@ -80,7 +82,7 @@ app_ui = ui.page_fillable(
         output_widget("hist1"),
         # ui.card(output_widget("country_detail_pop"), height="400px"),
         # ui.card(output_widget("country_detail_percap"), height="400px"),
-        col_widths=[2,2,2,2,2,2, 6,6],
+        col_widths=[2,1,3,2,2,2, 6,6],
         row_heights=["auto", 1],
     ),
 )
