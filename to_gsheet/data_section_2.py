@@ -212,6 +212,8 @@ def bop_quarterly() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
 
     df_main = pd.concat([df_by_region_main, df_by_region_main2, caq_data_calc], axis = 0) ## combine
     df_main.reset_index(drop=True, inplace=True)
+    df_all_annual_2.replace({k:v for (k,v) in zip(df_init['desc'].to_list(), df_init['short_title'].to_list())}, inplace=True)
+    df_temp_col_1.replace({k:v for (k,v) in zip(df_init['desc'].to_list(), df_init['short_title'].to_list())}, inplace=True)
 
     return df_temp_col_1, df_all_annual_2, df_main
 
@@ -279,6 +281,7 @@ def bop_annual() -> tuple[pd.DataFrame, pd.DataFrame]:
     df_all_annual_2.replace('South Korea', 'Korea', inplace=True)
     df_all_annual_2.sort_values(by=['Type', 'Region'], inplace=True)
     df_all_annual_2.reset_index(drop=True, inplace=True)
+    df_all_annual_2.rename(columns={k:v for (k,v) in zip(df_all_annual_2.columns[4:], [x.year for x in df_all_annual_2.columns[4:]])}, inplace=True) ######### only for annnual data, dont use for quarterly data
 
     init_dict = df_init.to_dict()
     df_dict = dict()
@@ -372,6 +375,7 @@ def bop_annual() -> tuple[pd.DataFrame, pd.DataFrame]:
 
     df_main = pd.concat([df_by_region_main, df_by_region_main2, caq_data_calc], axis = 0) ## combine
     df_main.reset_index(drop=True, inplace=True)
+    df_all_annual_2.replace({k:v for (k,v) in zip(df_init['desc'].to_list(), df_init['short_title'].to_list())}, inplace=True)
 
     return df_all_annual_2, df_main
 
@@ -434,7 +438,8 @@ def iip_quarterly() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
                 df_all_annual_2 = pd.concat([df_all_annual_2, df_temp1], axis=0)
         else:
             continue
-
+    
+    df_all_annual_2.replace('South Korea', 'Korea', inplace=True)
     df_all_annual_2.sort_values(by=['Type', 'Region'], inplace=True)
     df_all_annual_2.reset_index(drop=True, inplace=True)
 
@@ -500,7 +505,7 @@ def iip_quarterly() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
 
     ###################### this is for debt ######################
 
-    debt_row = df_init.iloc[[20,24,25,26,28,29,30,31,32,33,34]]['desc'].to_list()
+    debt_row = df_init.iloc[[16,20,21,22,24,25,26,27,28,29,30]]['desc'].to_list()
     debt_row2 = ['Direct Investment', 'Portfolio Equity', 'Portfolio Debt','Financial Derivatives', 'Other Equity','Currency & Deposits','Loans','Insurance, Pension & Standardized Guarantee Schemes'
                 ,'Trade Credit & Advances','Other Accounts Payable','SDR Liabilities', ]
     sum_rows2 = df_init[(df_init['short_title'].isin(['OI Equity Liabilities', 'Insurance and Pension Liabilities', 'OI Others Liabilities', 'SDR Liabilities']))]['desc'].to_list()
@@ -544,17 +549,19 @@ def iip_quarterly() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
 
     df_main = pd.concat([df_by_region_main, df_by_region_main2, caq_data_calc], axis = 0) ## combine
     df_main.reset_index(drop=True, inplace=True)
+    df_all_annual_2.replace({k:v for (k,v) in zip(df_init['desc'].to_list(), df_init['short_title'].to_list())}, inplace=True)
+    df_temp_col_1.replace({k:v for (k,v) in zip(df_init['desc'].to_list(), df_init['short_title'].to_list())}, inplace=True)
 
     return df_temp_col_1, df_all_annual_2, df_main
 
-def iip_annual():
+def iip_annual() -> tuple[pd.DataFrame, pd.DataFrame]:
 
-    df_init = pd.read_excel(r"C:\Users\Admin\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Desktop\NLP Project\cfm-nlp\Automation.xlsx", sheet_name='IIP edit')
+    df_init = pd.read_excel(r"C:\Users\AhmadAizudeen\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Desktop\NLP Project\cfm-nlp\Automation.xlsx", sheet_name='IIP edit')
 
     path_dict = dict()
     list_1 = ['IMF IIP Annual.xlsx', 'IMF IIP Quarterly.xlsx']
-    # directory_path= r'C:\Users\Admin\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Roger and Aizudeen\Country BoP and IIP Data'
-    directory_path= r'C:\Users\Admin\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Roger and Aizudeen\Country BoP and IIP Data'
+    # directory_path= r'C:\Users\AhmadAizudeen\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Roger and Aizudeen\Country BoP and IIP Data'
+    directory_path= r'C:\Users\AhmadAizudeen\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Roger and Aizudeen\Country BoP and IIP Data'
     for filename in os.listdir(directory_path):
         if filename in ['01 Emerging Market', '02 G7 Countries']:
             continue
@@ -582,8 +589,8 @@ def iip_annual():
 
     df_all_annual_2 = df_all_annual[df_all_annual.columns[:4].to_list() + [dt for dt in df_all_annual.columns[4:].sort_values(ascending=True).to_list() if dt >= datetime(2019, 1, 1)]]
 
-    df_init_tw = pd.read_excel(r"C:\Users\Admin\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Desktop\NLP Project\cfm-nlp\Automation.xlsx", sheet_name='Taiwan BoP')
-    df_tw = pd.read_excel(r"C:\Users\Admin\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Roger and Aizudeen\Country BoP and IIP Data\Chinese Taipei (Taiwan) (TW)\TW CB IIP Annual.xlsx")
+    df_init_tw = pd.read_excel(r"C:\Users\AhmadAizudeen\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Desktop\NLP Project\cfm-nlp\Automation.xlsx", sheet_name='Taiwan IIP')
+    df_tw = pd.read_excel(r"C:\Users\AhmadAizudeen\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Roger and Aizudeen\Country BoP and IIP Data\Chinese Taipei (Taiwan) (TW)\TW CB IIP Annual.xlsx")
     df_tw.rename(columns={df_tw.columns[0]: 'Type'}, inplace=True)
     df_tw = df_tw[df_tw['Type'].isin(df_init_tw['desc'])]
 
@@ -607,7 +614,8 @@ def iip_annual():
                 df_all_annual_2 = pd.concat([df_all_annual_2, df_temp1], axis=0)
         else:
             continue
-
+    
+    df_all_annual_2.replace('South Korea', 'Korea', inplace=True)
     df_all_annual_2.sort_values(by=['Type', 'Region'], inplace=True)
     df_all_annual_2.reset_index(drop=True, inplace=True)
     df_all_annual_2.rename(columns={k:v for (k,v) in zip(df_all_annual_2.columns[4:], [x.year for x in df_all_annual_2.columns[4:]])}, inplace=True) ######### only for annnual data, dont use for quarterly data
@@ -685,5 +693,6 @@ def iip_annual():
 
     df_main = pd.concat([df_by_region_main, df_by_region_main2], axis = 0) ## combine
     df_main.reset_index(drop=True, inplace=True)
+    df_all_annual_2.replace({k:v for (k,v) in zip(df_init['desc'].to_list(), df_init['short_title'].to_list())}, inplace=True)
 
-    return df_main
+    return df_all_annual_2, df_main
