@@ -5,7 +5,7 @@ import warnings
 
 warnings.filterwarnings("ignore")
 
-def bop_quarterly() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+def bop_quarterly(year_use:int = 2019) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     df_init = pd.read_excel(r"C:\Users\AhmadAizudeen\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Desktop\NLP Project\cfm-nlp\Automation.xlsx", sheet_name='BoP edit')
 
     path_dict = dict()
@@ -37,7 +37,7 @@ def bop_quarterly() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
 
     df_all_annual.rename(columns={df_all_annual.columns[0]: 'Type'}, inplace=True)
 
-    df_all_annual_2 = df_all_annual[df_all_annual.columns[:4].to_list() + [dt for dt in df_all_annual.columns[4:].sort_values(ascending=True).to_list() if dt >= datetime(2019, 1, 1)]]
+    df_all_annual_2 = df_all_annual[df_all_annual.columns[:4].to_list() + [dt for dt in df_all_annual.columns[4:].sort_values(ascending=True).to_list() if dt >= datetime(year_use, 1, 1)]]
 
     def sg_row(df:pd.DataFrame, main:bool = True) -> pd.DataFrame:
         var = df.columns[:4] if main else df.columns[4:]
@@ -85,7 +85,7 @@ def bop_quarterly() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     for x, y in enumerate(df_tw['Type'].to_list()):
         df_tw.iat[x,0] = list(df_init_tw[(df_init_tw['desc'] == y)]['desc2'])[0]
 
-    selected_columns = [col for col in df_tw.columns[4:] if pd.to_datetime(col) >= datetime(2019, 1, 1)]
+    selected_columns = [col for col in df_tw.columns[4:] if pd.to_datetime(col) >= datetime(year_use, 1, 1)]
     final_columns = list(df_tw.columns[:4]) + selected_columns
     df_tw = df_tw[final_columns]
 
@@ -217,7 +217,7 @@ def bop_quarterly() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
 
     return df_temp_col_1, df_all_annual_2, df_main
 
-def bop_annual() -> tuple[pd.DataFrame, pd.DataFrame]:
+def bop_annual(year_use:int = 2019) -> tuple[pd.DataFrame, pd.DataFrame]:
 
     df_init = pd.read_excel(r"C:\Users\AhmadAizudeen\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Desktop\NLP Project\cfm-nlp\Automation.xlsx", sheet_name='BoP edit')
 
@@ -250,7 +250,7 @@ def bop_annual() -> tuple[pd.DataFrame, pd.DataFrame]:
 
     df_all_annual.rename(columns={df_all_annual.columns[0]: 'Type'}, inplace=True)
 
-    df_all_annual_2 = df_all_annual[df_all_annual.columns[:4].to_list() + [dt for dt in df_all_annual.columns[4:].sort_values(ascending=True).to_list() if dt >= datetime(2019, 1, 1)]]
+    df_all_annual_2 = df_all_annual[df_all_annual.columns[:4].to_list() + [dt for dt in df_all_annual.columns[4:].sort_values(ascending=True).to_list() if dt >= datetime(year_use, 1, 1)]]
 
     df_init_tw = pd.read_excel(r"C:\Users\AhmadAizudeen\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Desktop\NLP Project\cfm-nlp\Automation.xlsx", sheet_name='Taiwan BoP')
     df_tw = pd.read_excel(r"C:\Users\AhmadAizudeen\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Roger and Aizudeen\Country BoP and IIP Data\Chinese Taipei (Taiwan) (TW)\TW CB BOP Annual.xlsx")
@@ -261,7 +261,7 @@ def bop_annual() -> tuple[pd.DataFrame, pd.DataFrame]:
     for x, y in enumerate(df_tw['Type'].to_list()):
         df_tw.iat[x,0] = list(df_init_tw[(df_init_tw['desc'] == y)]['desc2'])[0]
 
-    selected_columns = [col for col in df_tw.columns[4:] if pd.to_datetime(col) >= datetime(2019, 1, 1)]
+    selected_columns = [col for col in df_tw.columns[4:] if pd.to_datetime(col) >= datetime(year_use, 1, 1)]
     final_columns = list(df_tw.columns[:4]) + selected_columns
     df_tw = df_tw[final_columns]
 
@@ -379,7 +379,7 @@ def bop_annual() -> tuple[pd.DataFrame, pd.DataFrame]:
 
     return df_all_annual_2, df_main
 
-def iip_quarterly() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+def iip_quarterly(year_use:int = 2019) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     df_init = pd.read_excel(r"C:\Users\AhmadAizudeen\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Desktop\NLP Project\cfm-nlp\Automation.xlsx", sheet_name='IIP edit')
 
     path_dict = dict()
@@ -411,7 +411,7 @@ def iip_quarterly() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
 
     df_all_annual.rename(columns={df_all_annual.columns[0]: 'Type'}, inplace=True)
 
-    df_all_annual_2 = df_all_annual[df_all_annual.columns[:4].to_list() + [dt for dt in df_all_annual.columns[4:].sort_values(ascending=True).to_list() if dt >= datetime(2019, 1, 1)]]
+    df_all_annual_2 = df_all_annual[df_all_annual.columns[:4].to_list() + [dt for dt in df_all_annual.columns[4:].sort_values(ascending=True).to_list() if dt >= datetime(year_use, 1, 1)]]
 
     df_init_tw = pd.read_excel(r"C:\Users\AhmadAizudeen\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Desktop\NLP Project\cfm-nlp\Automation.xlsx", sheet_name='Taiwan IIP')
     df_tw = pd.read_excel(r"C:\Users\AhmadAizudeen\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Roger and Aizudeen\Country BoP and IIP Data\Chinese Taipei (Taiwan) (TW)\TW CB IIP Annual.xlsx")
@@ -421,12 +421,20 @@ def iip_quarterly() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     for x, y in enumerate(df_tw['Type'].to_list()):
         df_tw.iat[x,0] = list(df_init_tw[(df_init_tw['desc'] == y)]['desc2'])[0]
 
-    selected_columns = [col for col in df_tw.columns[4:] if pd.to_datetime(col) >= datetime(2019, 1, 1)]
+    selected_columns = [col for col in df_tw.columns[4:] if pd.to_datetime(col) >= datetime(year_use, 1, 1)]
     final_columns = list(df_tw.columns[:4]) + selected_columns
     df_tw = df_tw[final_columns]
 
+    df_tw2 = pd.DataFrame(columns=df_all_annual_2.columns)
+    df_tw2 = pd.concat([df_tw2, df_tw], axis=0)
+
+    for y in df_tw.columns[4:]:
+        for x in df_tw2.columns[4:]:
+            if y.year == x.year:
+                df_tw2[x] = df_tw[y]  
+
     # concat to the main df
-    df_all_annual_2 = pd.concat([df_all_annual_2, df_tw], axis=0)
+    df_all_annual_2 = pd.concat([df_all_annual_2, df_tw2], axis=0)
 
     seacen_country = ['Papua New Guinea', 'Vietnam', 'Nepal', 'India', 'Indonesia', 'Laos', 'Sri Lanka', 'Hong Kong SAR (China)', 'Philippines', 'Taiwan', 'Malaysia', 'Mongolia', 'China', 'Cambodia', 'Thailand', 'Singapore', 'South Korea', 'Brunei', 'Myanmar']
 
@@ -448,21 +456,15 @@ def iip_quarterly() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     for x in init_dict['desc'].values():
         df_temp = df_all_annual_2[(df_all_annual_2[df_all_annual_2.columns[0]] == x)].reset_index(drop=True)
         df_dict[x] = df_temp
+    
+    df_temp_col_1 = df_all_annual_2.copy()
 
-    # calculate the sum of the columns (1H and 2H) for each year
-    num1, num2 = 0, 1
-    df_col = df_all_annual_2.columns[4:][:-1]
-    df_temp_col_1 = df_all_annual_2[df_all_annual_2.columns[:4]].reset_index(drop=True)
-
-    for x in range(len(df_col)//2):
-        df_col_temp = (df_all_annual_2[df_col[num1]] + df_all_annual_2[df_col[num1 + 1]]).div(1000)
-        year = df_col[num1].year
-        df_col_temp.reset_index(drop=True, inplace=True)
-        df_temp_col_1[f'{num2}H{year}'] = df_col_temp
-        num1 += 2
-        num2 += 1
-        if num2 == 3:
-            num2 = 1
+    # 1H = June, 2H = December
+    rename1 = [x for x in df_temp_col_1.columns[4:] if x.month in [6, 12]]
+    rename2 = ['1H'+f'{x.year}' if x.month == 6 else '2H'+f'{x.year}' for x in rename1]
+    dict_rename = {k:v for (k,v) in zip(rename1, rename2)}
+    df_temp_col_1.rename(columns=dict_rename, inplace=True)
+    df_temp_col_1 = df_temp_col_1[[*df_temp_col_1.columns[:4].to_list(), *rename2]]
 
     df_temp_col_1.drop(columns=['Last Update Time', 'Unit'], inplace=True)
 
@@ -554,7 +556,7 @@ def iip_quarterly() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
 
     return df_temp_col_1, df_all_annual_2, df_main
 
-def iip_annual() -> tuple[pd.DataFrame, pd.DataFrame]:
+def iip_annual(year_use:int = 2019) -> tuple[pd.DataFrame, pd.DataFrame]:
 
     df_init = pd.read_excel(r"C:\Users\AhmadAizudeen\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Desktop\NLP Project\cfm-nlp\Automation.xlsx", sheet_name='IIP edit')
 
@@ -587,7 +589,7 @@ def iip_annual() -> tuple[pd.DataFrame, pd.DataFrame]:
 
     df_all_annual.rename(columns={df_all_annual.columns[0]: 'Type'}, inplace=True)
 
-    df_all_annual_2 = df_all_annual[df_all_annual.columns[:4].to_list() + [dt for dt in df_all_annual.columns[4:].sort_values(ascending=True).to_list() if dt >= datetime(2019, 1, 1)]]
+    df_all_annual_2 = df_all_annual[df_all_annual.columns[:4].to_list() + [dt for dt in df_all_annual.columns[4:].sort_values(ascending=True).to_list() if dt >= datetime(year_use, 1, 1)]]
 
     df_init_tw = pd.read_excel(r"C:\Users\AhmadAizudeen\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Desktop\NLP Project\cfm-nlp\Automation.xlsx", sheet_name='Taiwan IIP')
     df_tw = pd.read_excel(r"C:\Users\AhmadAizudeen\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Roger and Aizudeen\Country BoP and IIP Data\Chinese Taipei (Taiwan) (TW)\TW CB IIP Annual.xlsx")
@@ -597,7 +599,7 @@ def iip_annual() -> tuple[pd.DataFrame, pd.DataFrame]:
     for x, y in enumerate(df_tw['Type'].to_list()):
         df_tw.iat[x,0] = list(df_init_tw[(df_init_tw['desc'] == y)]['desc2'])[0]
 
-    selected_columns = [col for col in df_tw.columns[4:] if pd.to_datetime(col) >= datetime(2019, 1, 1)]
+    selected_columns = [col for col in df_tw.columns[4:] if pd.to_datetime(col) >= datetime(year_use, 1, 1)]
     final_columns = list(df_tw.columns[:4]) + selected_columns
     df_tw = df_tw[final_columns]
 
@@ -696,3 +698,31 @@ def iip_annual() -> tuple[pd.DataFrame, pd.DataFrame]:
     df_all_annual_2.replace({k:v for (k,v) in zip(df_init['desc'].to_list(), df_init['short_title'].to_list())}, inplace=True)
 
     return df_all_annual_2, df_main
+
+def main(year_use:int = 2019) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    df1_1, df1_2, df1_3 = iip_quarterly(year_use)
+    df2_1, df2_2 = iip_annual(year_use)
+    df3_1, df3_2, df3_3 = bop_quarterly(year_use)
+    df4_1, df4_2 = bop_annual(year_use)
+
+    df1_1.insert(loc=0, column='Group2', value='IIP Quarterly')
+    df1_2.insert(loc=0, column='Group2', value='IIP Quarterly')
+    df1_3.insert(loc=0, column='Group2', value='IIP Quarterly')
+    df3_1.insert(loc=0, column='Group2', value='BoP Quarterly')
+    df3_2.insert(loc=0, column='Group2', value='BoP Quarterly')
+    df3_3.insert(loc=0, column='Group2', value='BoP Quarterly')
+
+    df2_1.insert(loc=0, column='Group2', value='IIP Annual')
+    df2_2.insert(loc=0, column='Group2', value='IIP Annual')
+    df4_1.insert(loc=0, column='Group2', value='BoP Annual')
+    df4_2.insert(loc=0, column='Group2', value='BoP Annual')
+
+    quarterly_type_half = pd.concat([df1_1, df3_1], axis=0)
+    quarterly_type_quarter = pd.concat([df1_2, df3_2], axis=0)
+    quarterly_region_half = pd.concat([df1_3, df3_3], axis=0)
+
+    annual_type_full = pd.concat([df2_1, df4_1], axis=0)
+    annual_region_full = pd.concat([df2_2, df4_2], axis=0)
+    annual_region_full.drop(columns=['Last Update Time', 'Unit'], inplace=True)
+
+    return quarterly_type_half, quarterly_type_quarter, quarterly_region_half, annual_type_full, annual_region_full

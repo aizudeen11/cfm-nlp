@@ -11,7 +11,7 @@ from pathlib import Path
 path = Path(__file__).parent
 path1 = path / "test.xlsx"
 path2 = path / "financial stress index.xlsx"
-path3 = path / "section 2.xlsx"
+path3 = path / "section 2 (1).xlsx"
 path4 = path / "Automation.xlsx"
 
 print(path)
@@ -20,25 +20,21 @@ print(path)
 @timed_lru_cache(seconds=None, maxsize=None)
 def dfs2() -> tuple[pd.DataFrame, pd.DataFrame, dict, pd.DataFrame]:
     df_init = pd.read_excel(path4, sheet_name='BoP edit')
-    short_title = df_init['short_title'].to_list()
-    description = df_init['desc'].to_list()
-    sc2_half = pd.read_excel(path3, sheet_name="sc2_half")
-    sc2_quarter = pd.read_excel(path3, sheet_name="sc2_quarter")
-    date_temp = sc2_quarter.columns[4:].to_list()
+    sc2_half = pd.read_excel(path3, sheet_name="quarterly_type_half")
+    sc2_quarter = pd.read_excel(path3, sheet_name="quarterly_type_quarter")
+    date_temp = sc2_quarter.columns[5:].to_list()
     date_temp2 = [dt.strftime("%Y-%m") for dt in date_temp]
     rename_date = {k: v for k, v in zip(date_temp, date_temp2)}
     sc2_quarter.rename(columns=rename_date, inplace=True)
     sc2_quarter[list(rename_date.values())] = sc2_quarter[list(rename_date.values())].apply(lambda x: round(x, 2))
     sc2_quarter['Last Update Time'] = pd.to_datetime(sc2_quarter['Last Update Time']).dt.strftime("%Y-%m-%d")
-    sc2_quarter['Type'] = sc2_quarter['Type'].replace(description, short_title)
-    sc2_half[sc2_half.columns[2:]] = sc2_half[sc2_half.columns[2:]].apply(lambda x: round(x,2))
-    sc2_half['Type'] = sc2_half['Type'].replace(description, short_title)
+    sc2_half[sc2_half.columns[3:]] = sc2_half[sc2_half.columns[3:]].apply(lambda x: round(x,2))
 
     dict1 = df_init[['group', 'short_title']].groupby("group")["short_title"].apply(list).reset_index().to_dict(orient='list')
     dict2 = {k: {item: item for item in v} for k, v in zip(dict1['group'], dict1['short_title'])}
 
-    df_main = pd.read_excel(path3, sheet_name="df_main")
-    df_main[df_main.columns[3:]] = df_main[df_main.columns[3:]].apply(lambda x: round(x,2))
+    df_main = pd.read_excel(path3, sheet_name="quarterly_region_half")
+    df_main[df_main.columns[4:]] = df_main[df_main.columns[4:]].apply(lambda x: round(x,2))
 
     return sc2_half, sc2_quarter, dict2, df_main
 

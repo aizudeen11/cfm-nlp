@@ -45,11 +45,11 @@ def dataF():
 
 @timed_lru_cache(seconds=None, maxsize=None)
 def dataF2():
-    df1, df2, df3 = main()
-    return df1, df2, df3
+    quarterly_type_half, quarterly_type_quarter, quarterly_region_half, annual_type_full, annual_region_full = main()
+    return quarterly_type_half, quarterly_type_quarter, quarterly_region_half, annual_type_full, annual_region_full
 
 # vix_data, policy_rate1, policy_rate2, policy_rate3, fx, cds, liquidity, gdp_growth, yield_data_calc, stock_data_calc2, empi, financial_sector_beta, garch, fsi, stock_price_index, sovereign_bond_yields, capital_flows = dataF()
-sc2_half, sc2_quarter, df_main = dataF2()
+quarterly_type_half, quarterly_type_quarter, quarterly_region_half, annual_type_full, annual_region_full = dataF2()
 
 id_test = '11Ora6_5EoQJdgnUpjjZgFZyrILguo1c32mde_uQwupw'
 id_fsi = '1IK1wbkFNaRH9vFwXfhBYh_RSK-UXKbaGzbCoAQWWRjY'
@@ -59,35 +59,34 @@ id_sc2 = '1hKGm154j2OEaGZ3Gi7Qr7uADKupNP_raQ0vV70OlTkk'
     #    , 'sovereign_bond_yields': sovereign_bond_yields, 'capital_flows': capital_flows}
 # ws2 = {'yield_data_calc': yield_data_calc, 'stock_data_calc2': stock_data_calc2, 'empi': empi, 'financial_sector_beta': financial_sector_beta, 'garch': garch, 'fsi': fsi}
 
-ws3 = {'sc2_half': sc2_half, 'sc2_quarter': sc2_quarter, 'df_main': df_main}
+ws3 = {'quarterly_type_half': quarterly_type_half, 'quarterly_type_quarter': quarterly_type_quarter, 'quarterly_region_half': quarterly_region_half,
+       'annual_type_full': annual_type_full, 'annual_region_full': annual_region_full}
 
 # for x in ws2:
 #     ws2[x] = ws2[x].reset_index()
 #     ws2[x]['Date'] = ws2[x]['Date'].dt.strftime('%Y-%m')
 
-def process(id, ws):
-    scopes = [
-        'https://www.googleapis.com/auth/spreadsheets']
-
-    creds = Credentials.from_service_account_file(
-        'credential.json', scopes=scopes)
-
+def process(id, worksheet_data_dict):
+    scopes = ['https://www.googleapis.com/auth/spreadsheets']
+    creds = Credentials.from_service_account_file('credential.json', scopes=scopes)
     client = gspread.authorize(creds)
 
-    # 1PP6gpBcoOHjjgCx7LuHLa3dv4ET6ufKvpSY4UDvBczQ
-    sheet_id = id
-    sheet = client.open_by_key(sheet_id)
+    sheet = client.open_by_key(id)
 
-    values_list = sheet.sheet1.get_all_values()
+    # Get list of existing worksheet titles
+    worksheet_list = [ws.title for ws in sheet.worksheets()]
 
-    worksheet_list = map(lambda x: x.title, sheet.worksheets())
-    worksheet_name = ws
-    for new_worksheet_name, data in worksheet_name.items():
-        if new_worksheet_name in worksheet_list:
-            sheet1 = sheet.worksheet(new_worksheet_name)
-        else:
-            sheet1 = sheet.add_worksheet(title=new_worksheet_name, rows=10, cols=10)
-        set_with_dataframe(sheet1, data)
+    for worksheet_name, data in worksheet_data_dict.items():
+        # If worksheet exists, delete it
+        if worksheet_name in worksheet_list:
+            ws_to_delete = sheet.worksheet(worksheet_name)
+            sheet.del_worksheet(ws_to_delete)
+
+        # Create new worksheet
+        new_ws = sheet.add_worksheet(title=worksheet_name, rows=10, cols=10)
+
+        # Write dataframe to new worksheet
+        set_with_dataframe(new_ws, data)
 
 # process(id_test, ws1) # uncomment if need to update test sheet
 # process(id_fsi, ws2) # uncomment if need to update fsi sheet
