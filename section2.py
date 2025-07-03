@@ -18,6 +18,8 @@ all_df = dfs2()
 years = sorted(set([str(x)[:4] for x in all_df[1].columns[4:].to_list()]))
 print(years)
 
+dict1 = {'Annual': {'Balance of Payment': {}}}
+
 app_ui = ui.page_fillable(
     {"class": "p-3"},
     ui.markdown(
@@ -117,7 +119,7 @@ def server(input, output, session):
 
     @render_plotly
     def hist1():
-        dataF = filltered_df3().drop(['Group','Region'], axis=1)
+        dataF = filltered_df3().drop(['Group'], axis=1)
         dataF = dataF.melt(id_vars="Type", var_name="Date", value_name="Value")
         fig = px.bar( #or px.histogram
             dataF,
