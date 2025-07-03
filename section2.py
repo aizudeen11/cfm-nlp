@@ -15,10 +15,13 @@ import warnings
 warnings.filterwarnings("ignore")
 
 all_df = dfs2()
-years = sorted(set([str(x)[:4] for x in all_df[1].columns[4:].to_list()]))
+years = sorted(set([str(x)[:4] for x in all_df[1].columns[5:].to_list()]))
 print(years)
-
-dict1 = {'Annual': {'Balance of Payment': {}}}
+print(all_df[2])
+dict1 = {'Balance of Payment': {'Annual by type': {'Annual by type': 'hello'}, 'Annual by region':'Annual by region', 'Quarterly by type' : 'Quarterly by type'
+                                , 'Half-yearly by type' : 'Half-yearly by type', 'Half-yearly by region' : 'Half-yearly by region'},
+        'International Investment Position' : {'Annual by type': 'Annual by type', 'Annual by region':'Annual by region', 'Quarterly by type' : 'Quarterly by type'
+                                , 'Half-yearly by type' : 'Half-yearly by type', 'Half-yearly by region' : 'Half-yearly by region'}}
 
 app_ui = ui.page_fillable(
     {"class": "p-3"},
@@ -27,12 +30,12 @@ app_ui = ui.page_fillable(
     ),
     ui.layout_columns(
         ui.div(
-            ui.input_radio_buttons(
+            ui.input_select(
                 "sc2_df",
                 "Select DataFrame",
-                choices=["sc2_half", "sc2_quarter", 'df_main'],
-                selected="sc2_half",
-                inline=True,
+                choices=dict1,
+                selected=dict1["Balance of Payment"]['Annual by type'],
+                # inline=True,
             ),
             ui.input_checkbox_group(
                 "view_type",
@@ -49,6 +52,7 @@ app_ui = ui.page_fillable(
             choices=sorted(years, reverse=True),
             selected=years,
             multiple=True,
+            size=6,
         ),
         ui.input_select(
             "country",
@@ -63,6 +67,7 @@ app_ui = ui.page_fillable(
             "types",
             "Select Type for scr2 table",
             choices=all_df[2],
+            # choices=dict1,
             selected=all_df[0]["Type"].unique().tolist()[0],
             # multiple=True,
         ),
