@@ -16,27 +16,54 @@ path4 = path / "Automation.xlsx"
 
 print(path)
 
-
 @timed_lru_cache(seconds=None, maxsize=None)
-def dfs2() -> tuple[pd.DataFrame, pd.DataFrame, dict, pd.DataFrame]:
+def dfs2() -> tuple[pd.DataFrame, pd.DataFrame, dict, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    def function1(col:int, sheet:str) -> pd.DataFrame:
+        df = pd.read_excel(path3, sheet_name=sheet)
+        df[df.columns[col:]] = df[df.columns[col:]].apply(lambda x: round(x,2))
+        return df
     df_init = pd.read_excel(path4, sheet_name='BoP edit')
-    sc2_half = pd.read_excel(path3, sheet_name="quarterly_type_half")
-    sc2_quarter = pd.read_excel(path3, sheet_name="quarterly_type_quarter")
-    date_temp = sc2_quarter.columns[5:].to_list()
+    df_quarterly_type_half = function1(3, "quarterly_type_half")
+    
+    df_quarterly_type_quarter = pd.read_excel(path3, sheet_name="quarterly_type_quarter")
+    date_temp = df_quarterly_type_quarter.columns[5:].to_list()
     date_temp2 = [dt.strftime("%Y-%m") for dt in date_temp]
     rename_date = {k: v for k, v in zip(date_temp, date_temp2)}
-    sc2_quarter.rename(columns=rename_date, inplace=True)
-    sc2_quarter[list(rename_date.values())] = sc2_quarter[list(rename_date.values())].apply(lambda x: round(x, 2))
-    sc2_quarter['Last Update Time'] = pd.to_datetime(sc2_quarter['Last Update Time']).dt.strftime("%Y-%m-%d")
-    sc2_half[sc2_half.columns[3:]] = sc2_half[sc2_half.columns[3:]].apply(lambda x: round(x,2))
+    df_quarterly_type_quarter.rename(columns=rename_date, inplace=True)
+    df_quarterly_type_quarter[list(rename_date.values())] = df_quarterly_type_quarter[list(rename_date.values())].apply(lambda x: round(x, 2))
+    df_quarterly_type_quarter['Last Update Time'] = pd.to_datetime(df_quarterly_type_quarter['Last Update Time']).dt.strftime("%Y-%m-%d")
+    
 
     dict1 = df_init[['group', 'short_title']].groupby("group")["short_title"].apply(list).reset_index().to_dict(orient='list')
     dict2 = {k: {item: item for item in v} for k, v in zip(dict1['group'], dict1['short_title'])}
 
-    df_main = pd.read_excel(path3, sheet_name="quarterly_region_half")
-    df_main[df_main.columns[4:]] = df_main[df_main.columns[4:]].apply(lambda x: round(x,2))
+    df_quarterly_region_half = function1(4, "quarterly_region_half")
+    df_annual_type_full = function1(5, "annual_type_full")
+    df_annual_region_full = function1(4, "annual_region_full")
+    
 
-    return sc2_half, sc2_quarter, dict2, df_main
+    return df_quarterly_type_half, df_quarterly_type_quarter, dict2, df_quarterly_region_half, df_annual_type_full, df_annual_region_full
+
+# @timed_lru_cache(seconds=None, maxsize=None)
+# def dfs2() -> tuple[pd.DataFrame, pd.DataFrame, dict, pd.DataFrame]:
+#     df_init = pd.read_excel(path4, sheet_name='BoP edit')
+#     sc2_half = pd.read_excel(path3, sheet_name="quarterly_type_half")
+#     sc2_quarter = pd.read_excel(path3, sheet_name="quarterly_type_quarter")
+#     date_temp = sc2_quarter.columns[5:].to_list()
+#     date_temp2 = [dt.strftime("%Y-%m") for dt in date_temp]
+#     rename_date = {k: v for k, v in zip(date_temp, date_temp2)}
+#     sc2_quarter.rename(columns=rename_date, inplace=True)
+#     sc2_quarter[list(rename_date.values())] = sc2_quarter[list(rename_date.values())].apply(lambda x: round(x, 2))
+#     sc2_quarter['Last Update Time'] = pd.to_datetime(sc2_quarter['Last Update Time']).dt.strftime("%Y-%m-%d")
+#     sc2_half[sc2_half.columns[3:]] = sc2_half[sc2_half.columns[3:]].apply(lambda x: round(x,2))
+
+#     dict1 = df_init[['group', 'short_title']].groupby("group")["short_title"].apply(list).reset_index().to_dict(orient='list')
+#     dict2 = {k: {item: item for item in v} for k, v in zip(dict1['group'], dict1['short_title'])}
+
+#     df_main = pd.read_excel(path3, sheet_name="quarterly_region_half")
+#     df_main[df_main.columns[4:]] = df_main[df_main.columns[4:]].apply(lambda x: round(x,2))
+
+#     return sc2_half, sc2_quarter, dict2, df_main
 
 # vix, policy_rate1, policy_rate2, policy_rate3, fx, cds, liquidity, gdp_growth
 @timed_lru_cache(seconds=None, maxsize=None)

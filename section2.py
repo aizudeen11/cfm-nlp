@@ -4,6 +4,7 @@
 from shiny import App, ui, render, reactive, req
 import pandas as pd
 from processed_data import dfs, dfs1, dfs2
+from faicons import icon_svg as icon
 
 # import shinyswatch
 from shinywidgets import render_plotly, output_widget, render_widget
@@ -16,33 +17,44 @@ warnings.filterwarnings("ignore")
 
 all_df = dfs2()
 years = sorted(set([str(x)[:4] for x in all_df[1].columns[5:].to_list()]))
-print(years)
-print(all_df[2])
-dict1 = {'Balance of Payment': {'Annual by type': {'Annual by type': 'hello'}, 'Annual by region':'Annual by region', 'Quarterly by type' : 'Quarterly by type'
-                                , 'Half-yearly by type' : 'Half-yearly by type', 'Half-yearly by region' : 'Half-yearly by region'},
-        'International Investment Position' : {'Annual by type': 'Annual by type', 'Annual by region':'Annual by region', 'Quarterly by type' : 'Quarterly by type'
-                                , 'Half-yearly by type' : 'Half-yearly by type', 'Half-yearly by region' : 'Half-yearly by region'}}
+
+dict1 = ['Balance of Payment', 'International Investment Position']
+dict2 = ['Annually', 'Quarterly', 'Half-Yearly']
+dict3 = {'Balance of Payment':['BoP Quarterly', 'BoP Annual'],
+         'International Investment Position':['IIP Quarterly', 'IIP Annual']}
+dict4 = ['by Region', 'by Category', 'by Country']
+
+capital_flow = all_df[3]["Group"].unique().tolist()
+capital_flow2 = ['Resident Capital Flows', 'Non-Resident Capital Flows', 'Current Account']
+change = {k:v for k,v in zip(capital_flow, capital_flow2)}
 
 app_ui = ui.page_fillable(
     {"class": "p-3"},
     ui.markdown(
-        "**Instructions**: to **Select Year(s)** and **Select Region(s)**, hold down the Ctrl (windows) or Command (Mac) button to select multiple options."
+        "**Instructions**: to **Select Year(s)**, hold down the Ctrl (windows) or Command (Mac) button to select multiple options."
     ),
     ui.layout_columns(
         ui.div(
             ui.input_select(
                 "sc2_df",
-                "Select DataFrame",
+                label="Select DataFrame",
                 choices=dict1,
-                selected=dict1["Balance of Payment"]['Annual by type'],
+                selected=dict1[0],
                 # inline=True,
             ),
-            ui.input_checkbox_group(
-                "view_type",
-                "Select View Type",
-                choices=["DataFrame", "Figure"],
-                selected=["DataFrame"],
-                inline=True,
+            ui.input_select(
+                "sc2_df2",
+                "Select Frequency",
+                choices=dict2,
+                selected=dict1[0],
+                # inline=True,
+            ),
+            ui.input_select(
+                "sc2_df3",
+                "Select Segmentation",
+                choices=dict4,
+                selected=dict1[0],
+                # inline=True,
             ),
         class_ = 'hh'
         ),
@@ -56,7 +68,12 @@ app_ui = ui.page_fillable(
         ),
         ui.input_select(
             "country",
-            "Select Region(s) for scr2 table",
+            # "Select Countries for Segmentation by Country",
+            label=ui.tags.span("Select Countries  ",
+                                ui.tooltip(
+                                    icon("circle-info"),
+                                    "for Segmentation by Country filtering."
+                                )),
             choices=all_df[0]["Region"].unique().tolist(),
             selected=all_df[0]["Region"].unique().tolist(),
             multiple=True,
@@ -65,25 +82,49 @@ app_ui = ui.page_fillable(
         ),
         ui.input_select(
             "types",
-            "Select Type for scr2 table",
+            # "Select Type for Segmentation by Country",
+            label=ui.tags.span("Select Type  ",
+                                ui.tooltip(
+                                    icon("circle-info"),
+                                    "for Segmentation by Country filtering."
+                                )),
             choices=all_df[2],
             # choices=dict1,
-            selected=all_df[0]["Type"].unique().tolist()[0],
+            selected='FDI Assets',
             # multiple=True,
-        ),
+        ), 
         ui.input_select(
             "group",
-            "Select Group(s) for df_main table",
-            choices=all_df[3]["Group"].unique().tolist(),
-            selected=all_df[3]["Group"].unique().tolist()[0],
+            # "Select Group(s) for DataFrame Balance of Payment",
+            label=ui.tags.span("Select Group  ",
+                                ui.tooltip(
+                                    icon("circle-info"),
+                                    "for DataFrame filtering."
+                                )),
+            choices=capital_flow,
+            selected=capital_flow[0],
             # multiple=True,
         ),
-        ui.input_select(
+        ui.div(
+            ui.input_select(
             "region",
-            "Select Region for df_main table",
+            # "Select Region for df_main table",
+            label=ui.tags.span("Select Region  ",
+                                ui.tooltip(
+                                    icon("circle-info"),
+                                    'for Segmetation by Region filtering if Multiple Region filter set to "No".'
+                                )),
             choices=all_df[3]['Region'].unique().tolist(),
             selected=all_df[3]["Region"].unique().tolist()[0],
             # multiple=True,
+            ),
+            ui.input_radio_buttons(
+                "include_region",
+                "Include Multiple Region filter",
+                choices={True: "No", False: "Yes"},
+                selected=False,
+                inline=True,
+            ),
         ),
         ui.card(ui.output_data_frame("summary_data"), height="400px"),
         output_widget("hist1"),
@@ -94,57 +135,139 @@ app_ui = ui.page_fillable(
     ),
 )
 
-
+num=1
 def server(input, output, session):
-    def parent_filtered_df(df: pd.DataFrame, input_country: tuple[list|tuple|str], input_types: str, input_year: list, df_int:int, vars:bool, grouping:tuple[list|tuple]) -> pd.DataFrame:
-        
-        filt_df = df[(df["Type"]==input_types) & (df["Region"].isin(input_country))] if vars else df[(df["Region"]==input_country)&(df["Group"]==grouping)]
-        selected_years = [x for x in filt_df.columns.to_list() if any(m in x for m in input_year)]
-        selected_col = list(filt_df.columns[0:df_int]) + selected_years
-        filt_df = filt_df[selected_col]
-        return filt_df
+    exclude = ['Asian EDMEs Total', 'India Total', 'China Total', 'Asian Advance Economies Total', 'ASEAN5 Economies Total', 'Asia-Pacific Total']
+    exclude2 = {'Last Update Time', 'Unit'}
+    def parent_filtered_df(df: pd.DataFrame, input_country: tuple[list|tuple|str]=None, df_int:int=None, include_region: bool=False) -> pd.DataFrame:
+        col = df.columns.to_list()
+        filt_df = df[df['Group2'].isin(dict3[input.sc2_df()])]        
+        if input.sc2_df3() == 'by Country':
+            filt_df = filt_df[(df["Region"].isin(input_country)) & (filt_df["Type"].isin([input.types()]))]
+        else:
+            if not include_region:
+                filt_df = filt_df[(filt_df["Region"]==input.region())]
+            else:
+                filt_df = filt_df[(filt_df['Region'] != 'Asia-Pacific') | (filt_df['Group'] == 'Current Account')]
+        # print(filt_df)
+        if 'Group' in col:
+            filt_df = filt_df[filt_df["Group"]==input.group()]
 
+        if len(filt_df.columns.to_list()) > 3:
+            selected_years = [x for x in filt_df.columns.to_list() if any(m in str(x) for m in input.years())]
+            selected_col = list(filt_df.columns[0:df_int]) + selected_years
+            filt_df = filt_df[selected_col]
+        global num
+        print(f'executed {num} times')
+        num += 1
+        # print('From function',filt_df, sep='\n')
+        return filt_df
+    
+    def filtered_df() -> pd.DataFrame:
+        if input.sc2_df2() == "Half-Yearly" and input.sc2_df3() == "by Country":
+            return parent_filtered_df(all_df[0], input_country=input.country(), df_int=3)
+
+        elif input.sc2_df2() == "Quarterly" and input.sc2_df3() == "by Country":
+            return parent_filtered_df(all_df[1], input_country=input.country(), df_int=5)
+
+        elif input.sc2_df2() == "Half-Yearly" and input.sc2_df3() in ["by Region", "by Category"]:
+            return parent_filtered_df(all_df[3], input_country=input.country(), df_int=4, include_region=input.include_region())
+
+        elif input.sc2_df2() == "Annually" and input.sc2_df3() == "by Country":
+            return parent_filtered_df(all_df[4], input_country=input.country(), df_int=5)
+
+        elif input.sc2_df2() == "Annually" and input.sc2_df3() in ["by Region", "by Category"]:
+            return parent_filtered_df(all_df[5], input_country=input.country(), df_int=4, include_region=input.include_region()) 
+        
+        elif input.sc2_df2() == "Half-Yearly" and input.sc2_df3() in ["by Region", "by Category"]:
+            return parent_filtered_df(all_df[3], input_country=input.country(), df_int=4, include_region=input.include_region())
+
+        elif input.sc2_df2() == "Annually" and input.sc2_df3() in ["by Region", "by Category"]:
+            return parent_filtered_df(all_df[5], input_country=input.country(), df_int=4, include_region=input.include_region())
+
+    # if input.sc2_df2() == 'Annual' and input.sc2_df3() == 'by Region':
     filltered_df1 = reactive.Calc(
-        lambda: parent_filtered_df(all_df[0], input.country(), input.types(), input.years(), 2, True, input.group())
-    )
-    filltered_df2 = reactive.Calc(
-        lambda: parent_filtered_df(all_df[1], input.country(), input.types(), input.years(), 4, True, input.group())
-    )
-    filltered_df3 = reactive.Calc(
-        lambda: parent_filtered_df(df=all_df[3], input_types='none',input_country=input.region(), input_year=input.years(), df_int=3, vars=False, grouping=input.group() )
+        lambda: filtered_df()
     )
 
     @render.data_frame
     def summary_data():
-        df_dict = {'sc2_half': filltered_df1(),
-                   'sc2_quarter': filltered_df2(),
-                   'df_main': filltered_df3(),}
-        df = df_dict[input.sc2_df()]
-        return render.DataGrid(df)
+        df_dict = {'Annually': {'by Region':{'Balance of Payment': filltered_df1(), 'International Investment Position': filltered_df1()},
+                                'by Category':{'Balance of Payment': filltered_df1(), 'International Investment Position': filltered_df1()}, 
+                              'by Country':{'Balance of Payment': filltered_df1(), 'International Investment Position': filltered_df1()},
+                              },
+                   'Quarterly': {'by Region':{'Balance of Payment': None, 'International Investment Position': None}, 
+                                 'by Category':{'Balance of Payment': None, 'International Investment Position': None}, 
+                              'by Country':{'Balance of Payment': filltered_df1(), 'International Investment Position': filltered_df1()},
+                              },
+                   'Half-Yearly': {'by Region':{'Balance of Payment': filltered_df1(), 'International Investment Position': filltered_df1()}, 
+                                   'by Category':{'Balance of Payment': filltered_df1(), 'International Investment Position': filltered_df1()}, 
+                              'by Country':{'Balance of Payment': filltered_df1(), 'International Investment Position': filltered_df1()},
+                              },
+                   }
+
+        df = df_dict[input.sc2_df2()][input.sc2_df3()][input.sc2_df()].map(lambda x: '{:,.2f}'.format(x) if isinstance(x, (int, float)) else x)
+        if df is not None:
+            df.rename(columns={k:str(k) for k in df.columns}, inplace=True)            
+        return render.DataGrid(df) if df is not None else render.DataGrid(pd.DataFrame(['No DataFrame for the selected options!'], columns=['Message']))
 
     @render_plotly
     def hist1():
-        dataF = filltered_df3().drop(['Group'], axis=1)
-        dataF = dataF.melt(id_vars="Type", var_name="Date", value_name="Value")
-        fig = px.bar( #or px.histogram
-            dataF,
-            x="Date",
-            y="Value",
-            color="Type",
-            # barmode="group",
-            # orientation="h",
-            title="Balance of Payment",
-        )
-        fig.update_layout(
-            legend=dict(
-                orientation="h",     # Horizontal layout
-                y=-0.2,              # Push it down (adjust if needed)
-                x=0.5,               # Center it
-                xanchor="center",
-                yanchor="top"
+        if input.sc2_df2() in ['Annually', 'Half-Yearly']:
+            dropping = []
+            dataF0 = filltered_df1()
+            if input.sc2_df3() == 'by Region':
+                dropping = ['Group2', 'Type']
+                dataF = dataF0[~dataF0['Type'].isin(exclude)]
+            if input.sc2_df3() == 'by Category':
+                dataF = dataF0[dataF0['Region'] == input.region()]
+                if dataF.empty:
+                    dataF = dataF0
+                dropping = ['Group2', 'Region']
+                dataF = dataF[~dataF['Type'].isin(exclude)]
+            elif input.sc2_df3() == 'by Country':
+                dropping = ['Group2', 'Type']
+                dataF = dataF0
+                # ['Group2', 'Region' if input.sc2_df3 == 'by Country' else 'Type']
+            dataF = dataF.drop(dropping, axis=1)
+            
+            if input.sc2_df3() == 'by Region':
+                dataF = dataF.drop(['Group'], axis=1)
+                dataF = dataF.groupby(['Region']).sum().reset_index().melt(id_vars=['Region'], var_name='Date', value_name='Value')
+            elif input.sc2_df3() == 'by Category':
+                dataF = dataF.drop(['Group'], axis=1)                
+                dataF = dataF.groupby(['Type']).sum().reset_index().melt(id_vars=['Type'], var_name='Date', value_name='Value')
+            elif input.sc2_df3() == 'by Country':
+                # dataF = dataF.drop(['Group'], axis=1)
+                col = set(dataF.columns.to_list())
+                exclude3 = list(exclude2.intersection(col))
+                dataF.drop(exclude3, axis=1, inplace=True)
+                dataF = dataF.melt(id_vars="Region", var_name="Date", value_name="Value")
+        else:
+            dataF = pd.DataFrame({'A' : []})
+        
+        if not dataF.empty:
+            var1 = {'by Region': 'Region', 'by Country': 'Region', 'by Category': 'Type'}
+            # dataF = dataF.melt(id_vars=var1[input.sc2_df3()], var_name="Date", value_name="Value") 
+            fig = px.bar( #or px.histogram
+                dataF,
+                x="Date",
+                y="Value",
+                color=var1[input.sc2_df3()],
+                # barmode="group",
+                # orientation="h",
+                title=f'{input.sc2_df()} {'('+change[input.group()]+")" if input.sc2_df() == 'Balance of Payment' else ''}- {input.sc2_df2()} {input.sc2_df3()}',
             )
-        )
-        return fig
+            fig.update_layout(
+                legend=dict(
+                    orientation="h",     # Horizontal layout
+                    y=-0.2,              # Push it down (adjust if needed)
+                    x=0.5,               # Center it
+                    xanchor="center",
+                    yanchor="top"
+                )
+            )
+            return fig
 
 
 app = App(app_ui, server)
