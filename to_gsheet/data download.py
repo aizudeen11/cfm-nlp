@@ -90,7 +90,8 @@ def process(id, worksheet_data_dict):
 
 # process(id_test, ws1) # uncomment if need to update test sheet
 # process(id_fsi, ws2) # uncomment if need to update fsi sheet
-process(id_sc2, ws3)
+if __name__ == "__main__":
+    process(id_sc2, ws3)
 
 # df = Data()
 # capital_flows = df.capital_flows()

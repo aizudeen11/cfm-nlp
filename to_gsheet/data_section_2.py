@@ -2,6 +2,7 @@ import pandas as pd
 from datetime import datetime
 import os
 import warnings
+from dateutil.relativedelta import relativedelta
 
 warnings.filterwarnings("ignore")
 
@@ -81,7 +82,7 @@ def bop_quarterly(year_use:int = 2019) -> tuple[pd.DataFrame, pd.DataFrame, pd.D
     df_tw = pd.read_excel(r"C:\Users\AhmadAizudeen\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Roger and Aizudeen\Country BoP and IIP Data\Chinese Taipei (Taiwan) (TW)\TW CB BOP Quarterly.xlsx")
     df_tw.rename(columns={df_tw.columns[0]: 'Type'}, inplace=True)
     df_tw = df_tw[df_tw['Type'].isin(df_init_tw['desc'])]
-
+    df_tw.replace('Taiwan (China)', 'Taiwan', inplace=True)
     for x, y in enumerate(df_tw['Type'].to_list()):
         df_tw.iat[x,0] = list(df_init_tw[(df_init_tw['desc'] == y)]['desc2'])[0]
 
@@ -424,7 +425,7 @@ def iip_quarterly(year_use:int = 2019) -> tuple[pd.DataFrame, pd.DataFrame, pd.D
     selected_columns = [col for col in df_tw.columns[4:] if pd.to_datetime(col) >= datetime(year_use, 1, 1)]
     final_columns = list(df_tw.columns[:4]) + selected_columns
     df_tw = df_tw[final_columns]
-
+    df_tw.replace('Taiwan (China)', 'Taiwan', inplace=True)
     df_tw2 = pd.DataFrame(columns=df_all_annual_2.columns)
     df_tw2 = pd.concat([df_tw2, df_tw], axis=0)
 
@@ -698,6 +699,184 @@ def iip_annual(year_use:int = 2019) -> tuple[pd.DataFrame, pd.DataFrame]:
     df_all_annual_2.replace({k:v for (k,v) in zip(df_init['desc'].to_list(), df_init['short_title'].to_list())}, inplace=True)
 
     return df_all_annual_2, df_main
+
+def cb_bop_quarterly(year_use:int = 2019) -> pd.DataFrame:
+    df_init = pd.read_excel(r"C:\Users\AhmadAizudeen\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Roger and Aizudeen\data.xlsx", sheet_name='BOP')
+    path_dict = dict()
+    list_1 = ['CB BOP Quarterly.xlsx']
+    # directory_path= r'C:\Users\AhmadAizudeen\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Roger and Aizudeen\Country BoP and IIP Data'
+    directory_path= r'C:\Users\AhmadAizudeen\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Roger and Aizudeen\Country BoP and IIP Data'
+    for filename in os.listdir(directory_path):
+        if filename in ['01 Emerging Market', '02 G7 Countries']:
+            continue
+        file_path = os.path.join(directory_path, filename)
+        list_temp = []
+        for filename2 in os.listdir(file_path):
+            if any(word in str(filename2) for word in list_1):            
+                list_temp.append(filename2)
+                path_dict[filename] = list_temp
+            else:
+                continue
+
+    df_path = []
+    for k, v in path_dict.items():
+        df_path.append(os.path.join(directory_path, k, v[0]))
+        print(v[0]) ## to check the file name
+
+    df_all_annual = pd.DataFrame()
+    for x, y in enumerate(df_path):
+        df = pd.read_excel(y)
+        df = df[df[df.columns[0]].isin(df_init['Item'])]
+        df_all_annual = pd.concat([df_all_annual, df]) 
+
+    df_all_annual = df_all_annual[df_all_annual['Region'].isin(df_init['Country'])]
+    # df_all_annual
+    df_all_annual.rename(columns={df_all_annual.columns[0]: 'Type'}, inplace=True)
+
+    df_all_annual_2 = df_all_annual[df_all_annual.columns[:4].to_list() + [dt for dt in df_all_annual.columns[4:].sort_values(ascending=True).to_list() if dt >= datetime(year_use, 1, 1)]]
+
+    seacen_country = ['Papua New Guinea', 'Vietnam', 'Nepal', 'India', 'Indonesia', 'Laos', 'Sri Lanka', 'Hong Kong SAR (China)', 'Philippines', 'Taiwan', 'Malaysia', 'Mongolia', 'China', 'Cambodia', 'Thailand', 'Singapore', 'South Korea', 'Brunei', 'Myanmar']
+
+    to_replace = {k:v for k,v in zip(df_init['Item'], df_init['short_title'])}
+
+    df_all_annual_2.replace(to_replace, inplace=True)
+
+    for x in df_all_annual_2['Type'].values:
+        var1 = list(set(df_all_annual_2[(df_all_annual_2['Type'] == x)]['Region'].values).symmetric_difference(set(seacen_country)))
+        if len(var1) > 0:
+            for y in var1:
+                df_temp1 = pd.DataFrame({"Type": [x], "Region": [y]})
+                df_all_annual_2 = pd.concat([df_all_annual_2, df_temp1], axis=0)
+        else:
+            continue
+    df_all_annual_2.replace('South Korea', 'Korea', inplace=True)
+
+    df_all_annual_2 = df_all_annual_2[(df_all_annual_2['Region'].isin(df_init['Country'].unique()) & ~(df_all_annual_2['Unit'].isna()))] #remove this if needed
+    df_np = df_all_annual_2[df_all_annual_2['Region'] == 'Nepal']
+    df_all_annual_2 = df_all_annual_2[df_all_annual_2['Region'] != 'Nepal']
+    dt_ch = [dt for dt in df_all_annual_2.columns[4:].sort_values(ascending=True).to_list() if dt.month in [4,7,10,1]]
+    new_dt = [dt - relativedelta(months=1) for dt in dt_ch]
+    df_np = df_np[df_np.columns[:4].to_list() + dt_ch]
+    df_all_annual_2 = df_all_annual_2[df_all_annual_2.columns[:4].to_list() + new_dt]
+    df_np.rename(columns={k:v for k,v in zip(dt_ch, new_dt)}, inplace=True)
+
+    df_all_annual_2 = pd.concat([df_all_annual_2, df_np], axis=0)
+    df_all_annual_2.sort_values(by=['Type', 'Region'], inplace=True)
+    df_all_annual_2.reset_index(drop=True, inplace=True)
+
+    return df_all_annual_2
+
+def cb_iip_quarterly(year_use:int = 2019) -> pd.DataFrame:
+    df_init = pd.read_excel(r"C:\Users\AhmadAizudeen\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Roger and Aizudeen\data.xlsx", sheet_name='IIP')
+    path_dict = dict()
+    list_1 = ['CB IIP Quarterly.xlsx']
+    # directory_path= r'C:\Users\AhmadAizudeen\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Roger and Aizudeen\Country BoP and IIP Data'
+    directory_path= r'C:\Users\AhmadAizudeen\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Roger and Aizudeen\Country BoP and IIP Data'
+    for filename in os.listdir(directory_path):
+        if filename in ['01 Emerging Market', '02 G7 Countries']:
+            continue
+        file_path = os.path.join(directory_path, filename)
+        list_temp = []
+        for filename2 in os.listdir(file_path):
+            if any(word in str(filename2) for word in list_1):            
+                list_temp.append(filename2)
+                path_dict[filename] = list_temp
+            else:
+                continue
+
+    df_path = []
+    for k, v in path_dict.items():
+        df_path.append(os.path.join(directory_path, k, v[0]))
+        print(v[0]) ## to check the file name
+
+    df_all_annual = pd.DataFrame()
+    for x, y in enumerate(df_path):
+        df = pd.read_excel(y)
+        df = df[df[df.columns[0]].isin(df_init['Item'])]
+        df_all_annual = pd.concat([df_all_annual, df]) 
+
+    df_all_annual = df_all_annual[df_all_annual['Region'].isin(df_init['Country'])]
+
+    df_all_annual.rename(columns={df_all_annual.columns[0]: 'Type'}, inplace=True)
+
+    df_all_annual_2 = df_all_annual[df_all_annual.columns[:4].to_list() + [dt for dt in df_all_annual.columns[4:].sort_values(ascending=True).to_list() if dt >= datetime(year_use, 1, 1)]]
+
+    seacen_country = ['Papua New Guinea', 'Vietnam', 'Nepal', 'India', 'Indonesia', 'Laos', 'Sri Lanka', 'Hong Kong SAR (China)', 'Philippines', 'Taiwan', 'Malaysia', 'Mongolia', 'China', 'Cambodia', 'Thailand', 'Singapore', 'South Korea', 'Brunei', 'Myanmar']
+
+    to_replace = {k:v for k,v in zip(df_init['Item'], df_init['short_title'])}
+
+    df_all_annual_2.replace(to_replace, inplace=True)
+
+    for x in df_all_annual_2['Type'].values:
+        var1 = list(set(df_all_annual_2[(df_all_annual_2['Type'] == x)]['Region'].values).symmetric_difference(set(seacen_country)))
+        if len(var1) > 0:
+            for y in var1:
+                df_temp1 = pd.DataFrame({"Type": [x], "Region": [y]})
+                df_all_annual_2 = pd.concat([df_all_annual_2, df_temp1], axis=0)
+        else:
+            continue
+    df_all_annual_2.replace('South Korea', 'Korea', inplace=True)
+
+    df_all_annual_2 = df_all_annual_2[(df_all_annual_2['Region'].isin(df_init['Country'].unique()) & ~(df_all_annual_2['Unit'].isna()))] #remove this if needed
+
+    df_all_annual_2.sort_values(by=['Type', 'Region'], inplace=True)
+    df_all_annual_2.reset_index(drop=True, inplace=True)
+    
+    return df_all_annual_2
+
+def to_combine_bopq(year_use:int = 2019):
+    x1, y1, z1 = bop_quarterly()
+    y2 = cb_bop_quarterly()
+    df_temp2 = pd.DataFrame(columns=y1.columns)
+    temp1 = pd.DataFrame(columns=y1.columns)
+    index_list = []
+    date_use = {'Laos': [datetime(2025, 9, 1)],
+                'Malaysia': [datetime(2025, 3, 1), datetime(2025, 6, 1), datetime(2025, 9, 1)],
+                'Mongolia': [datetime(2025, 6, 1), datetime(2025, 9, 1)],
+                'Nepal': [datetime(2025, 9, 1)],
+                'Sri Lanka': [datetime(2025, 6, 1), datetime(2025, 9, 1)],
+                }
+
+    for x,y in zip(y2['Type'].values, y2['Region'].values):
+        if y not in date_use.keys():
+            continue
+        temp1 = y1[(y1['Type'] == x) & (y1['Region'] == y)]
+        index_list.append(temp1.index[0])
+        temp1.sort_values(by=['Type', 'Region'], inplace=True)
+        temp1[date_use[y]] = y2[(y2['Type'] == x) & (y2['Region'] == y)][date_use[y]].values
+        df_temp2 = pd.concat([df_temp2, temp1], axis=0)
+        
+    y1.drop(index_list, inplace=True, axis=0) ########################## this line is new
+    df_temp2 = pd.concat([y1, df_temp2], axis=0) ########################## this line is new
+    df_temp2.sort_values(by=['Type', 'Region'], inplace=True)
+    df_temp2.reset_index(drop=True, inplace=True)
+    return df_temp2
+
+def to_combine_iipq(year_use:int = 2019):
+    x1, y1, z1 = iip_quarterly()
+    y2 = cb_iip_quarterly()
+    df_temp2 = pd.DataFrame(columns=y1.columns)
+    temp1 = pd.DataFrame(columns=y1.columns)
+    index_list = []
+    date_use = {
+                'Malaysia': [datetime(2025, 3, 1), datetime(2025, 6, 1), datetime(2025, 9, 1)],                
+                'Sri Lanka': [datetime(2025, 6, 1), datetime(2025, 9, 1), ],
+                }
+
+    for x,y in zip(y2['Type'].values, y2['Region'].values):
+        if y not in date_use.keys():
+            continue
+        temp1 = y1[(y1['Type'] == x) & (y1['Region'] == y)]
+        index_list.append(temp1.index[0])
+        temp1.sort_values(by=['Type', 'Region'], inplace=True)
+        temp1[date_use[y]] = y2[(y2['Type'] == x) & (y2['Region'] == y)][date_use[y]].values
+        df_temp2 = pd.concat([df_temp2, temp1], axis=0)
+
+    y1.drop(index_list, inplace=True, axis=0) ########################## this line is new
+    df_temp2 = pd.concat([y1, df_temp2], axis=0) ########################## this line is new
+    df_temp2.sort_values(by=['Type', 'Region'], inplace=True)
+    df_temp2.reset_index(drop=True, inplace=True)
+    return df_temp2
 
 def main(year_use:int = 2019) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     df1_1, df1_2, df1_3 = iip_quarterly(year_use)

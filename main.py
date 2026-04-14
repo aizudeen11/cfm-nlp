@@ -449,8 +449,8 @@ def server(input, output, session):
     @render_plotly
     def hist6():
         fsi = filltered_fsi()
-        fsi = fsi[['Date', 'China', 'India', 'ASEAN-5', 'Asia Advanced Economies', 'Asia']]
-        fsi = fsi.rename(columns={'ASEAN-5': 'ASEAN-4'})
+        fsi = fsi[['Date', 'China', 'India', 'ASEAN-4', 'Asia Advanced Economies', 'Asia']]
+        # fsi = fsi.rename(columns={'ASEAN-5': 'ASEAN-4'})
         # fsi = fsi[fsi["Quarter"].isin(input.gdp_quarterly())]
         fsi = fsi.melt(id_vars=["Date"], var_name="Region", value_name="Value")
         fig = px.line(

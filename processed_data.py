@@ -44,6 +44,52 @@ def dfs2() -> tuple[pd.DataFrame, pd.DataFrame, dict, pd.DataFrame, pd.DataFrame
 
     return df_quarterly_type_half, df_quarterly_type_quarter, dict2, df_quarterly_region_half, df_annual_type_full, df_annual_region_full
 
+@timed_lru_cache(seconds=None, maxsize=None)
+def dfs3() -> tuple[pd.DataFrame, pd.DataFrame, dict, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    def function1(col:int, df:pd.DataFrame) -> pd.DataFrame:
+        df[df.columns[col:]] = df[df.columns[col:]].apply(lambda x: round(x,2))
+        return df
+    url = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vReR_hV-h-iryKTq7mbQLkqeDobiBV1Md69TPCO5aEOSUQB7KIra33FbXB1BZ2N2SYwy58kkwOxMdVU/pub?output=xlsx'
+    response = requests.get(url)
+    xls = BytesIO(response.content)
+    df_main = pd.read_excel(BytesIO(response.content))
+    sheets = [
+        "quarterly_type_half",
+        "quarterly_type_quarter",
+        "quarterly_region_half",
+        "annual_type_full",
+        "annual_region_full"
+        ]
+
+    dfs = pd.read_excel(xls, sheet_name=sheets)
+    df_quarterly_type_half = dfs["quarterly_type_half"]
+    df_quarterly_type_quarter = dfs["quarterly_type_quarter"]
+    df_quarterly_region_half = dfs["quarterly_region_half"]
+    df_annual_type_full = dfs["annual_type_full"]
+    df_annual_region_full = dfs["annual_region_full"]
+
+    df_quarterly_type_half = function1(3, df_quarterly_type_half)
+    df_quarterly_region_half = function1(4, df_quarterly_region_half)
+    df_annual_type_full = function1(5, df_annual_type_full)
+    df_annual_region_full = function1(4, df_annual_region_full)
+
+    df_init = pd.read_excel(path4, sheet_name='BoP edit')
+    date_temp = df_quarterly_type_quarter.columns[5:].to_list()
+    date_temp2 = [dt.strftime("%Y-%m") for dt in date_temp]
+    rename_date = {k: v for k, v in zip(date_temp, date_temp2)}
+    df_quarterly_type_quarter.rename(columns=rename_date, inplace=True)
+    df_quarterly_type_quarter[list(rename_date.values())] = df_quarterly_type_quarter[list(rename_date.values())].apply(lambda x: round(x, 2))
+    df_quarterly_type_quarter['Last Update Time'] = pd.to_datetime(df_quarterly_type_quarter['Last Update Time']).dt.strftime("%Y-%m-%d")
+    
+
+    dict1 = df_init[['group', 'short_title']].groupby("group")["short_title"].apply(list).reset_index().to_dict(orient='list')
+    dict2 = {k: {item: item for item in v} for k, v in zip(dict1['group'], dict1['short_title'])}
+
+    print('Data read from google sheet')
+
+    return df_quarterly_type_half, df_quarterly_type_quarter, dict2, df_quarterly_region_half, df_annual_type_full, df_annual_region_full
+    
+
 # @timed_lru_cache(seconds=None, maxsize=None)
 # def dfs2() -> tuple[pd.DataFrame, pd.DataFrame, dict, pd.DataFrame]:
 #     df_init = pd.read_excel(path4, sheet_name='BoP edit')
@@ -127,19 +173,43 @@ def dfs1() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.D
     url2 = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSRMFoOOi8AXat4kH62KTNp56FbRc7XN9sSioYbfzOzPU0TDYWqkNqxhu8rWtnUy6erG9WVp9noknFp/pub?output=xlsx'
     response = requests.get(url)
     response2 = requests.get(url2)
-    vix_data = pd.read_excel(BytesIO(response.content), sheet_name="vix_data")
-    policy_rate1 = pd.read_excel(BytesIO(response.content), sheet_name="policy_rate1")
-    fx = pd.read_excel(BytesIO(response.content), sheet_name="fx")
+    xls = BytesIO(response.content)
+    sheets = [
+        "vix_data",
+        "policy_rate1",
+        "fx",
+        "cds",
+        "liquidity",
+        'gdp_growth',
+        'stock_price_index',
+        'sovereign_bond_yields',
+        'capital_flows',
+        ]
+
+    dfs = pd.read_excel(xls, sheet_name=sheets)
+    vix_data = dfs["vix_data"]
+    policy_rate1 = dfs["policy_rate1"]
+    fx = dfs["fx"]
+    cds = dfs["cds"]
+    liquidity = dfs["liquidity"]
+    gdp_growth = dfs["gdp_growth"]
+    stock_price_index = dfs["stock_price_index"]
+    sovereign_bond_yields = dfs["sovereign_bond_yields"]
+    capital_flows = dfs["capital_flows"]
+
+    # vix_data = pd.read_excel(BytesIO(response.content), sheet_name="vix_data")
+    # policy_rate1 = pd.read_excel(BytesIO(response.content), sheet_name="policy_rate1")
+    # fx = pd.read_excel(BytesIO(response.content), sheet_name="fx")
     fx['Year'] = fx['Year'].astype(str)
-    cds = pd.read_excel(BytesIO(response.content), sheet_name="cds")
-    liquidity = pd.read_excel(BytesIO(response.content), sheet_name="liquidity")
-    gdp_growth = pd.read_excel(BytesIO(response.content), sheet_name="gdp_growth")
-    stock_price_index = pd.read_excel(BytesIO(response.content), sheet_name="stock_price_index")
+    # cds = pd.read_excel(BytesIO(response.content), sheet_name="cds")
+    # liquidity = pd.read_excel(BytesIO(response.content), sheet_name="liquidity")
+    # gdp_growth = pd.read_excel(BytesIO(response.content), sheet_name="gdp_growth")
+    # stock_price_index = pd.read_excel(BytesIO(response.content), sheet_name="stock_price_index")
     stock_price_index = stock_price_index.astype({'Year': 'object', 'Region': 'object'})
-    sovereign_bond_yields = pd.read_excel(BytesIO(response.content), sheet_name="sovereign_bond_yields")
+    # sovereign_bond_yields = pd.read_excel(BytesIO(response.content), sheet_name="sovereign_bond_yields")
     sovereign_bond_yields = sovereign_bond_yields.astype({'Year': 'object', 'Region': 'object'})
     fsi = pd.read_excel(BytesIO(response2.content), sheet_name="fsi")
-    capital_flows = pd.read_excel(BytesIO(response.content), sheet_name="capital_flows")
+    # capital_flows = pd.read_excel(BytesIO(response.content), sheet_name="capital_flows")
     t2 = time.perf_counter()
     policy_rate2 = policy_rate1[
         policy_rate1["Region"].isin(

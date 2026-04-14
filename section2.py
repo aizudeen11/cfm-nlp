@@ -3,7 +3,7 @@
 # SHIFT + END to go to end of line
 from shiny import App, ui, render, reactive, req
 import pandas as pd
-from processed_data import dfs, dfs1, dfs2
+from processed_data import dfs, dfs1, dfs2, dfs3
 from faicons import icon_svg as icon
 
 # import shinyswatch
@@ -15,7 +15,8 @@ import warnings
 
 warnings.filterwarnings("ignore")
 
-all_df = dfs2()
+all_df = dfs2() # for production
+# all_df = dfs3() # for live
 years = sorted(set([str(x)[:4] for x in all_df[1].columns[5:].to_list()]))
 
 dict1 = ['Balance of Payment', 'International Investment Position']
@@ -206,9 +207,10 @@ def server(input, output, session):
                               },
                    }
 
-        df = df_dict[input.sc2_df2()][input.sc2_df3()][input.sc2_df()].map(lambda x: '{:,.2f}'.format(x) if isinstance(x, (int, float)) else x)
+        df = df_dict[input.sc2_df2()][input.sc2_df3()][input.sc2_df()]
         if df is not None:
-            df.rename(columns={k:str(k) for k in df.columns}, inplace=True)            
+            df.rename(columns={k:str(k) for k in df.columns}, inplace=True)
+            df = df.map(lambda x: '{:,.2f}'.format(x) if isinstance(x, (int, float)) else x)
         return render.DataGrid(df) if df is not None else render.DataGrid(pd.DataFrame(['No DataFrame for the selected options!'], columns=['Message']))
 
     @render_plotly
@@ -268,6 +270,5 @@ def server(input, output, session):
                 )
             )
             return fig
-
-
+        
 app = App(app_ui, server)
