@@ -17,3 +17,5 @@ to_gsheet/credentials.json
 2024-11-27_Answer_Intro_to_Web_Scraping_in_Python.ipynb
 chromedriver.exe
 fomc-download.py
+scrap.ipynb
+webscrap.ipynb
