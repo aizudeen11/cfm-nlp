@@ -193,25 +193,27 @@ def server(input, output, session):
 
     @render.data_frame
     def summary_data():
-        df_dict = {'Annually': {'by Region':{'Balance of Payment': filltered_df1(), 'International Investment Position': filltered_df1()},
-                                'by Category':{'Balance of Payment': filltered_df1(), 'International Investment Position': filltered_df1()}, 
-                              'by Country':{'Balance of Payment': filltered_df1(), 'International Investment Position': filltered_df1()},
+        df = filltered_df1()
+        df_dict = {'Annually': {'by Region':{'Balance of Payment': df, 'International Investment Position': df},
+                                'by Category':{'Balance of Payment': df, 'International Investment Position': df}, 
+                              'by Country':{'Balance of Payment': df, 'International Investment Position': df},
                               },
                    'Quarterly': {'by Region':{'Balance of Payment': None, 'International Investment Position': None}, 
                                  'by Category':{'Balance of Payment': None, 'International Investment Position': None}, 
-                              'by Country':{'Balance of Payment': filltered_df1(), 'International Investment Position': filltered_df1()},
+                              'by Country':{'Balance of Payment': df, 'International Investment Position': df},
                               },
-                   'Half-Yearly': {'by Region':{'Balance of Payment': filltered_df1(), 'International Investment Position': filltered_df1()}, 
-                                   'by Category':{'Balance of Payment': filltered_df1(), 'International Investment Position': filltered_df1()}, 
-                              'by Country':{'Balance of Payment': filltered_df1(), 'International Investment Position': filltered_df1()},
+                   'Half-Yearly': {'by Region':{'Balance of Payment': df, 'International Investment Position': df}, 
+                                   'by Category':{'Balance of Payment': df, 'International Investment Position': df}, 
+                              'by Country':{'Balance of Payment': df, 'International Investment Position': df},
                               },
                    }
 
-        df = df_dict[input.sc2_df2()][input.sc2_df3()][input.sc2_df()]
-        if df is not None:
-            df.rename(columns={k:str(k) for k in df.columns}, inplace=True)
-            df = df.map(lambda x: '{:,.2f}'.format(x) if isinstance(x, (int, float)) else x)
-        return render.DataGrid(df) if df is not None else render.DataGrid(pd.DataFrame(['No DataFrame for the selected options!'], columns=['Message']))
+        df_selected = df_dict[input.sc2_df2()][input.sc2_df3()][input.sc2_df()]
+        if df_selected is not None:
+            df_selected = df_selected.copy()
+            df_selected.rename(columns={k:str(k) for k in df_selected.columns}, inplace=True)
+            df_selected = df_selected.map(lambda x: '{:,.2f}'.format(x) if isinstance(x, (int, float)) else x)
+        return render.DataGrid(df_selected) if df_selected is not None else render.DataGrid(pd.DataFrame(['No DataFrame for the selected options!'], columns=['Message']))
 
     @render_plotly
     def hist1():

@@ -3,16 +3,24 @@ from datetime import datetime
 import os
 import warnings
 from dateutil.relativedelta import relativedelta
+from dotenv import load_dotenv
+
+load_dotenv()
+
+iipbop_path = os.getenv("IIPBOP")
+data_path = os.getenv("DATA")
+taiwan_path = os.getenv("TAIWAN")
+automation_path = os.getenv("AUTOMATION")
+print(taiwan_path, automation_path, iipbop_path, data_path, sep='\n') ## to check if the path is correct
 
 warnings.filterwarnings("ignore")
 
 def bop_quarterly(year_use:int = 2019) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
-    df_init = pd.read_excel(r"C:\Users\AhmadAizudeen\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Desktop\NLP Project\cfm-nlp\Automation.xlsx", sheet_name='BoP edit')
+    df_init = pd.read_excel(automation_path, sheet_name='BoP edit')
 
     path_dict = dict()
     list_1 = ['IMF BOP Annual.xlsx', 'IMF BOP Quarterly.xlsx']
-    # directory_path= r'C:\Users\AhmadAizudeen\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Roger and Aizudeen\Country BoP and IIP Data'
-    directory_path= r'C:\Users\AhmadAizudeen\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Roger and Aizudeen\Country BoP and IIP Data'
+    directory_path= iipbop_path
     for filename in os.listdir(directory_path):
         if filename in ['01 Emerging Market', '02 G7 Countries']:
             continue
@@ -78,8 +86,8 @@ def bop_quarterly(year_use:int = 2019) -> tuple[pd.DataFrame, pd.DataFrame, pd.D
             merged = pd.concat([col1, col2], axis=1)
             sg_df = pd.concat([sg_df, merged], axis=0)
 
-    df_init_tw = pd.read_excel(r"C:\Users\AhmadAizudeen\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Desktop\NLP Project\cfm-nlp\Automation.xlsx", sheet_name='Taiwan BoP')
-    df_tw = pd.read_excel(r"C:\Users\AhmadAizudeen\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Roger and Aizudeen\Country BoP and IIP Data\Chinese Taipei (Taiwan) (TW)\TW CB BOP Quarterly.xlsx")
+    df_init_tw = pd.read_excel(automation_path, sheet_name='Taiwan BoP')
+    df_tw = pd.read_excel(taiwan_path)
     df_tw.rename(columns={df_tw.columns[0]: 'Type'}, inplace=True)
     df_tw = df_tw[df_tw['Type'].isin(df_init_tw['desc'])]
     df_tw.replace('Taiwan (China)', 'Taiwan', inplace=True)
@@ -220,12 +228,11 @@ def bop_quarterly(year_use:int = 2019) -> tuple[pd.DataFrame, pd.DataFrame, pd.D
 
 def bop_annual(year_use:int = 2019) -> tuple[pd.DataFrame, pd.DataFrame]:
 
-    df_init = pd.read_excel(r"C:\Users\AhmadAizudeen\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Desktop\NLP Project\cfm-nlp\Automation.xlsx", sheet_name='BoP edit')
+    df_init = pd.read_excel(automation_path, sheet_name='BoP edit')
 
     path_dict = dict()
     list_1 = ['IMF BOP Annual.xlsx', 'IMF BOP Quarterly.xlsx']
-    # directory_path= r'C:\Users\AhmadAizudeen\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Roger and Aizudeen\Country BoP and IIP Data'
-    directory_path= r'C:\Users\AhmadAizudeen\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Roger and Aizudeen\Country BoP and IIP Data'
+    directory_path= iipbop_path
     for filename in os.listdir(directory_path):
         if filename in ['01 Emerging Market', '02 G7 Countries']:
             continue
@@ -253,8 +260,8 @@ def bop_annual(year_use:int = 2019) -> tuple[pd.DataFrame, pd.DataFrame]:
 
     df_all_annual_2 = df_all_annual[df_all_annual.columns[:4].to_list() + [dt for dt in df_all_annual.columns[4:].sort_values(ascending=True).to_list() if dt >= datetime(year_use, 1, 1)]]
 
-    df_init_tw = pd.read_excel(r"C:\Users\AhmadAizudeen\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Desktop\NLP Project\cfm-nlp\Automation.xlsx", sheet_name='Taiwan BoP')
-    df_tw = pd.read_excel(r"C:\Users\AhmadAizudeen\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Roger and Aizudeen\Country BoP and IIP Data\Chinese Taipei (Taiwan) (TW)\TW CB BOP Annual.xlsx")
+    df_init_tw = pd.read_excel(automation_path, sheet_name='Taiwan BoP')
+    df_tw = pd.read_excel(taiwan_path)
     df_tw = df_tw.applymap(lambda x: x[:x.find(' (f')] if isinstance(x, str) and ' (f' in x else x)
     df_tw.rename(columns={df_tw.columns[0]: 'Type'}, inplace=True)
     df_tw = df_tw[df_tw['Type'].isin(df_init_tw['desc'])]
@@ -381,12 +388,11 @@ def bop_annual(year_use:int = 2019) -> tuple[pd.DataFrame, pd.DataFrame]:
     return df_all_annual_2, df_main
 
 def iip_quarterly(year_use:int = 2019) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
-    df_init = pd.read_excel(r"C:\Users\AhmadAizudeen\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Desktop\NLP Project\cfm-nlp\Automation.xlsx", sheet_name='IIP edit')
+    df_init = pd.read_excel(automation_path, sheet_name='IIP edit')
 
     path_dict = dict()
     list_1 = ['IMF IIP Annual.xlsx', 'IMF IIP Quarterly.xlsx']
-    # directory_path= r'C:\Users\AhmadAizudeen\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Roger and Aizudeen\Country BoP and IIP Data'
-    directory_path= r'C:\Users\AhmadAizudeen\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Roger and Aizudeen\Country BoP and IIP Data'
+    directory_path= iipbop_path
     for filename in os.listdir(directory_path):
         if filename in ['01 Emerging Market', '02 G7 Countries']:
             continue
@@ -414,8 +420,8 @@ def iip_quarterly(year_use:int = 2019) -> tuple[pd.DataFrame, pd.DataFrame, pd.D
 
     df_all_annual_2 = df_all_annual[df_all_annual.columns[:4].to_list() + [dt for dt in df_all_annual.columns[4:].sort_values(ascending=True).to_list() if dt >= datetime(year_use, 1, 1)]]
 
-    df_init_tw = pd.read_excel(r"C:\Users\AhmadAizudeen\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Desktop\NLP Project\cfm-nlp\Automation.xlsx", sheet_name='Taiwan IIP')
-    df_tw = pd.read_excel(r"C:\Users\AhmadAizudeen\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Roger and Aizudeen\Country BoP and IIP Data\Chinese Taipei (Taiwan) (TW)\TW CB IIP Annual.xlsx")
+    df_init_tw = pd.read_excel(automation_path, sheet_name='Taiwan IIP')
+    df_tw = pd.read_excel(taiwan_path)
     df_tw.rename(columns={df_tw.columns[0]: 'Type'}, inplace=True)
     df_tw = df_tw[df_tw['Type'].isin(df_init_tw['desc'])]
 
@@ -559,12 +565,11 @@ def iip_quarterly(year_use:int = 2019) -> tuple[pd.DataFrame, pd.DataFrame, pd.D
 
 def iip_annual(year_use:int = 2019) -> tuple[pd.DataFrame, pd.DataFrame]:
 
-    df_init = pd.read_excel(r"C:\Users\AhmadAizudeen\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Desktop\NLP Project\cfm-nlp\Automation.xlsx", sheet_name='IIP edit')
+    df_init = pd.read_excel(automation_path, sheet_name='IIP edit')
 
     path_dict = dict()
     list_1 = ['IMF IIP Annual.xlsx', 'IMF IIP Quarterly.xlsx']
-    # directory_path= r'C:\Users\AhmadAizudeen\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Roger and Aizudeen\Country BoP and IIP Data'
-    directory_path= r'C:\Users\AhmadAizudeen\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Roger and Aizudeen\Country BoP and IIP Data'
+    directory_path= iipbop_path
     for filename in os.listdir(directory_path):
         if filename in ['01 Emerging Market', '02 G7 Countries']:
             continue
@@ -592,8 +597,8 @@ def iip_annual(year_use:int = 2019) -> tuple[pd.DataFrame, pd.DataFrame]:
 
     df_all_annual_2 = df_all_annual[df_all_annual.columns[:4].to_list() + [dt for dt in df_all_annual.columns[4:].sort_values(ascending=True).to_list() if dt >= datetime(year_use, 1, 1)]]
 
-    df_init_tw = pd.read_excel(r"C:\Users\AhmadAizudeen\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Desktop\NLP Project\cfm-nlp\Automation.xlsx", sheet_name='Taiwan IIP')
-    df_tw = pd.read_excel(r"C:\Users\AhmadAizudeen\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Roger and Aizudeen\Country BoP and IIP Data\Chinese Taipei (Taiwan) (TW)\TW CB IIP Annual.xlsx")
+    df_init_tw = pd.read_excel(automation_path, sheet_name='Taiwan IIP')
+    df_tw = pd.read_excel(taiwan_path)
     df_tw.rename(columns={df_tw.columns[0]: 'Type'}, inplace=True)
     df_tw = df_tw[df_tw['Type'].isin(df_init_tw['desc'])]
 
@@ -701,11 +706,10 @@ def iip_annual(year_use:int = 2019) -> tuple[pd.DataFrame, pd.DataFrame]:
     return df_all_annual_2, df_main
 
 def cb_bop_quarterly(year_use:int = 2019) -> pd.DataFrame:
-    df_init = pd.read_excel(r"C:\Users\AhmadAizudeen\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Roger and Aizudeen\data.xlsx", sheet_name='BOP')
+    df_init = pd.read_excel(data_path, sheet_name='BOP')
     path_dict = dict()
     list_1 = ['CB BOP Quarterly.xlsx']
-    # directory_path= r'C:\Users\AhmadAizudeen\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Roger and Aizudeen\Country BoP and IIP Data'
-    directory_path= r'C:\Users\AhmadAizudeen\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Roger and Aizudeen\Country BoP and IIP Data'
+    directory_path= iipbop_path
     for filename in os.listdir(directory_path):
         if filename in ['01 Emerging Market', '02 G7 Countries']:
             continue
@@ -767,11 +771,10 @@ def cb_bop_quarterly(year_use:int = 2019) -> pd.DataFrame:
     return df_all_annual_2
 
 def cb_iip_quarterly(year_use:int = 2019) -> pd.DataFrame:
-    df_init = pd.read_excel(r"C:\Users\AhmadAizudeen\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Roger and Aizudeen\data.xlsx", sheet_name='IIP')
+    df_init = pd.read_excel(data_path, sheet_name='IIP')
     path_dict = dict()
     list_1 = ['CB IIP Quarterly.xlsx']
-    # directory_path= r'C:\Users\AhmadAizudeen\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Roger and Aizudeen\Country BoP and IIP Data'
-    directory_path= r'C:\Users\AhmadAizudeen\OneDrive - The SOUTH-EAST ASIAN CENTRAL BANKS (SEACEN) RESEARCH AND TRAINING\Roger and Aizudeen\Country BoP and IIP Data'
+    directory_path= iipbop_path
     for filename in os.listdir(directory_path):
         if filename in ['01 Emerging Market', '02 G7 Countries']:
             continue
