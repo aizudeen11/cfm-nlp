@@ -1,5 +1,7 @@
 __pycache__
 .env
+*.env
+to_gsheet/.env
 openpyxl-how.py
 /dashboard
 /chromedriver_win32
@@ -11,3 +13,7 @@ section 2 (1).xlsx
 Automation.xlsx
 to_gsheet/credentials.json
 *.json
+*.xlsx
+2024-11-27_Answer_Intro_to_Web_Scraping_in_Python.ipynb
+chromedriver.exe
+fomc-download.py
